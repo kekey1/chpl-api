@@ -5,10 +5,17 @@ import gov.healthit.chpl.entity.CertifiedProductEntity;
 
 import java.util.Date;
 
+import org.springframework.util.StringUtils;
+
 public class CertifiedProductDTO {
 	
 	
 	private Long id;
+	private String productCode;
+	private String versionCode;
+	private String icsCode;
+	private String additionalSoftwareCode;
+	private String certifiedDateCode;
 	private String acbCertificationId;
 	private Long certificationBodyId;
 	private Long certificationEditionId;
@@ -20,19 +27,28 @@ public class CertifiedProductDTO {
 	private Long practiceTypeId;
 	private Long productClassificationTypeId;
 	private Long productVersionId;
-	private String qualityManagementSystemAtt;
 	private String reportFileLocation;
 	private Long testingLabId;
 	private Long certificationStatusId;
 	private String otherAcb;
 	private Boolean visibleOnChpl;
 	private Boolean privacyAttestation;
+	private String termsOfUse;
+	private String apiDocumentation;
+	private String ics;
+	private Boolean sedTesting;
+	private Boolean qmsTestig;
+	private Boolean transparencyAttestation = null;
 	
 	public CertifiedProductDTO(){}
 	
 	public CertifiedProductDTO(CertifiedProductEntity entity){
-		
 		this.id = entity.getId();
+		this.productCode = entity.getProductCode();
+		this.versionCode = entity.getVersionCode();
+		this.icsCode = entity.getIcsCode();
+		this.additionalSoftwareCode = entity.getAdditionalSoftwareCode();
+		this.certifiedDateCode = entity.getCertifiedDateCode();
 		this.acbCertificationId = entity.getAcbCertificationId();
 		this.certificationBodyId = entity.getCertificationBodyId();
 		this.certificationEditionId = entity.getCertificationEditionId();
@@ -44,13 +60,17 @@ public class CertifiedProductDTO {
 		this.practiceTypeId = entity.getPracticeTypeId();
 		this.productClassificationTypeId = entity.getProductClassificationTypeId();
 		this.productVersionId = entity.getProductVersionId();
-		this.qualityManagementSystemAtt = entity.getQualityManagementSystemAtt();
 		this.reportFileLocation = entity.getReportFileLocation();
 		this.testingLabId = entity.getTestingLabId();		
 		this.certificationStatusId = entity.getCertificationStatusId();
 		this.otherAcb = entity.getOtherAcb();
 		this.setVisibleOnChpl(entity.getVisibleOnChpl());
 		this.setPrivacyAttestation(entity.getPrivacyAttestation());
+		this.setTermsOfUse(entity.getTermsOfUse());
+		this.setApiDocumentation(entity.getApiDocumentation());
+		this.setIcs(entity.getIcs());
+		this.setSedTesting(entity.getSedTesting());
+		this.setQmsTestig(entity.getQmsTesting());
 	}
 
 	
@@ -83,6 +103,12 @@ public class CertifiedProductDTO {
 	}
 	public void setChplProductNumber(String chplProductNumber) {
 		this.chplProductNumber = chplProductNumber;
+	}
+	public String getChplProductNumberForActivity() {
+		if(StringUtils.isEmpty(this.chplProductNumber)) {
+			return "a certified product";
+		}
+		return this.chplProductNumber;
 	}
 	public Date getCreationDate() {
 		return creationDate;
@@ -125,12 +151,6 @@ public class CertifiedProductDTO {
 	}
 	public void setProductVersionId(Long productVersionId) {
 		this.productVersionId = productVersionId;
-	}
-	public String getQualityManagementSystemAtt() {
-		return qualityManagementSystemAtt;
-	}
-	public void setQualityManagementSystemAtt(String qualityManagementSystemAtt) {
-		this.qualityManagementSystemAtt = qualityManagementSystemAtt;
 	}
 	public String getReportFileLocation() {
 		return reportFileLocation;
@@ -176,5 +196,92 @@ public class CertifiedProductDTO {
 	public void setPrivacyAttestation(Boolean privacyAttestation) {
 		this.privacyAttestation = privacyAttestation;
 	}
-	
+
+	public String getProductCode() {
+		return productCode;
+	}
+
+	public void setProductCode(String productCode) {
+		this.productCode = productCode;
+	}
+
+	public String getVersionCode() {
+		return versionCode;
+	}
+
+	public void setVersionCode(String versionCode) {
+		this.versionCode = versionCode;
+	}
+
+	public String getAdditionalSoftwareCode() {
+		return additionalSoftwareCode;
+	}
+
+	public void setAdditionalSoftwareCode(String additionalSoftwareCode) {
+		this.additionalSoftwareCode = additionalSoftwareCode;
+	}
+
+	public String getCertifiedDateCode() {
+		return certifiedDateCode;
+	}
+
+	public void setCertifiedDateCode(String certifiedDateCode) {
+		this.certifiedDateCode = certifiedDateCode;
+	}
+
+	public String getIcsCode() {
+		return icsCode;
+	}
+
+	public void setIcsCode(String icsCode) {
+		this.icsCode = icsCode;
+	}
+
+	public String getTermsOfUse() {
+		return termsOfUse;
+	}
+
+	public void setTermsOfUse(String termsOfUse) {
+		this.termsOfUse = termsOfUse;
+	}
+
+	public String getApiDocumentation() {
+		return apiDocumentation;
+	}
+
+	public void setApiDocumentation(String apiDocumentation) {
+		this.apiDocumentation = apiDocumentation;
+	}
+
+	public Boolean getTransparencyAttestation() {
+		return transparencyAttestation;
+	}
+
+	public void setTransparencyAttestation(Boolean transparencyAttestation) {
+		this.transparencyAttestation = transparencyAttestation;
+	}
+
+	public String getIcs() {
+		return ics;
+	}
+
+	public void setIcs(String ics) {
+		this.ics = ics;
+	}
+
+	public Boolean getSedTesting() {
+		return sedTesting;
+	}
+
+	public void setSedTesting(Boolean sedTesting) {
+		this.sedTesting = sedTesting;
+	}
+
+	public Boolean getQmsTestig() {
+		return qmsTestig;
+	}
+
+	public void setQmsTestig(Boolean qmsTestig) {
+		this.qmsTestig = qmsTestig;
+	}
 }

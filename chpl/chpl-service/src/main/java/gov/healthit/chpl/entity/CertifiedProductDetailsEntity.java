@@ -22,17 +22,35 @@ public class CertifiedProductDetailsEntity {
 	@Column( name = "certified_product_id", nullable = false  )
 	private Long id;
     
+    @Column(name = "testing_lab_code")
+    private String testingLabCode;
+    
+    @Column(name = "product_code")
+    private String productCode;
+    
+    @Column(name = "version_code")
+    private String versionCode;
+    
+    @Column(name = "ics_code")
+    private String icsCode;
+    
+    @Column(name = "additional_software_code")
+    private String additionalSoftwareCode;
+    
+    @Column(name = "certified_date_code")
+    private String certifiedDateCode;
+    
     @Column(name = "testing_lab_id")
     private Long testingLabId;
+    
+    @Column(name = "testing_lab_name")
+    private String testingLabName;
     
     @Column(name = "chpl_product_number")
     private String chplProductNumber;
     
     @Column(name = "report_file_location")
     private String reportFileLocation;
-    
-    @Column(name = "quality_management_system_att")
-    private String qualityManagementSystemAtt;
     
     @Column(name = "acb_certification_id")
     private String acbCertificationId;
@@ -67,6 +85,9 @@ public class CertifiedProductDetailsEntity {
     @Column(name = "certification_body_name")
     private String certificationBodyName;
     
+    @Column(name = "certification_body_code")
+    private String certificationBodyCode;
+    
     @Column(name = "product_classification_name")
     private String productClassificationName;
     
@@ -83,10 +104,13 @@ public class CertifiedProductDetailsEntity {
     private String productName;
     
     @Column(name = "vendor_id")
-    private Long vendorId;
+    private Long developerId;
     
     @Column(name = "vendor_name")
-    private String vendorName;
+    private String developerName;
+    
+    @Column(name = "vendor_code")
+    private String developerCode;
 
     @Column(name = "certification_date")
     private Date certificationDate;
@@ -97,7 +121,10 @@ public class CertifiedProductDetailsEntity {
     @Column(name = "count_cqms")
     private Integer countCqms;
     
-    @Column(name = "visible_on_chpl")
+    @Column(name = "count_corrective_action_plans")
+    private Integer countCorrectiveActionPlans;
+
+	@Column(name = "visible_on_chpl")
     private Boolean visibleOnChpl;
     
     @Column(name = "last_modified_date")
@@ -105,7 +132,25 @@ public class CertifiedProductDetailsEntity {
 
     @Column(name = "privacy_attestation")
 	private Boolean privacyAttestation;
-    
+	 
+	@Column(name = "terms_of_use_url")
+	private String termsOfUse;
+	
+	@Column(name = "api_documentation_url")
+	private String apiDocumentation;
+	
+	@Column(name = "ics")
+	private String ics;
+	
+	@Column(name = "sed")
+	private Boolean sedTesting;
+	
+	@Column(name = "qms")
+	private Boolean qmsTesting;
+	
+	@Column(name = "transparency_attestation")
+	private Boolean transparencyAttestation;
+	
 	public Long getId() {
 		return id;
 	}
@@ -136,14 +181,6 @@ public class CertifiedProductDetailsEntity {
 
 	public void setReportFileLocation(String reportFileLocation) {
 		this.reportFileLocation = reportFileLocation;
-	}
-
-	public String getQualityManagementSystemAtt() {
-		return qualityManagementSystemAtt;
-	}
-
-	public void setQualityManagementSystemAtt(String qualityManagementSystemAtt) {
-		this.qualityManagementSystemAtt = qualityManagementSystemAtt;
 	}
 
 	public String getAcbCertificationId() {
@@ -266,20 +303,20 @@ public class CertifiedProductDetailsEntity {
 		this.productName = productName;
 	}
 
-	public Long getVendorId() {
-		return vendorId;
+	public Long getDeveloperId() {
+		return developerId;
 	}
 
-	public void setVendorId(Long vendorId) {
-		this.vendorId = vendorId;
+	public void setDeveloperId(Long developerId) {
+		this.developerId = developerId;
 	}
 
-	public String getVendorName() {
-		return vendorName;
+	public String getDeveloperName() {
+		return developerName;
 	}
 
-	public void setVendorName(String vendorName) {
-		this.vendorName = vendorName;
+	public void setDeveloperName(String developerName) {
+		this.developerName = developerName;
 	}
     
 	public Date getCertificationDate() {
@@ -304,6 +341,14 @@ public class CertifiedProductDetailsEntity {
 
 	public void setCountCqms(Integer countCqms) {
 		this.countCqms = countCqms;
+	}
+	
+    public Integer getCountCorrectiveActionPlans() {
+		return countCorrectiveActionPlans;
+	}
+
+	public void setCountCorrectiveActionPlans(Integer countCorrectiveActionPlans) {
+		this.countCorrectiveActionPlans = countCorrectiveActionPlans;
 	}
 	
 	public Boolean getVisibleOnChpl() {
@@ -337,5 +382,148 @@ public class CertifiedProductDetailsEntity {
 	public void setPrivacyAttestation(Boolean privacyAttestation) {
 		this.privacyAttestation = privacyAttestation;
 	}
-	
+
+//	public Set<CertificationResultDetailsEntity> getCertResults() {
+//		return certResults;
+//	}
+//
+//	public void setCertResults(Set<CertificationResultDetailsEntity> certResults) {
+//		this.certResults = certResults;
+//	}
+//
+//	public Set<CQMResultDetailsEntity> getCqmResults() {
+//		return cqmResults;
+//	}
+//
+//	public void setCqmResults(Set<CQMResultDetailsEntity> cqmResults) {
+//		this.cqmResults = cqmResults;
+//	}
+//
+//	public Set<AdditionalSoftwareEntity> getAdditionalSoftware() {
+//		return additionalSoftware;
+//	}
+//
+//	public void setAdditionalSoftware(Set<AdditionalSoftwareEntity> additionalSoftware) {
+//		this.additionalSoftware = additionalSoftware;
+//	}
+
+	public String getProductCode() {
+		return productCode;
+	}
+
+	public void setProductCode(String productCode) {
+		this.productCode = productCode;
+	}
+
+	public String getVersionCode() {
+		return versionCode;
+	}
+
+	public void setVersionCode(String versionCode) {
+		this.versionCode = versionCode;
+	}
+
+	public String getAdditionalSoftwareCode() {
+		return additionalSoftwareCode;
+	}
+
+	public void setAdditionalSoftwareCode(String additionalSoftwareCode) {
+		this.additionalSoftwareCode = additionalSoftwareCode;
+	}
+
+	public String getCertifiedDateCode() {
+		return certifiedDateCode;
+	}
+
+	public void setCertifiedDateCode(String certifiedDateCode) {
+		this.certifiedDateCode = certifiedDateCode;
+	}
+
+	public String getCertificationBodyCode() {
+		return certificationBodyCode;
+	}
+
+	public void setCertificationBodyCode(String certificationBodyCode) {
+		this.certificationBodyCode = certificationBodyCode;
+	}
+
+	public String getDeveloperCode() {
+		return developerCode;
+	}
+
+	public void setDeveloperCode(String developerCode) {
+		this.developerCode = developerCode;
+	}
+
+	public String getIcsCode() {
+		return icsCode;
+	}
+
+	public void setIcsCode(String icsCode) {
+		this.icsCode = icsCode;
+	}
+
+	public String getTermsOfUse() {
+		return termsOfUse;
+	}
+
+	public void setTermsOfUse(String termsOfUse) {
+		this.termsOfUse = termsOfUse;
+	}
+
+	public String getApiDocumentation() {
+		return apiDocumentation;
+	}
+
+	public void setApiDocumentation(String apiDocumentation) {
+		this.apiDocumentation = apiDocumentation;
+	}
+
+	public Boolean getTransparencyAttestation() {
+		return transparencyAttestation;
+	}
+
+	public void setTransparencyAttestation(Boolean transparencyAttestation) {
+		this.transparencyAttestation = transparencyAttestation;
+	}
+
+	public String getTestingLabCode() {
+		return testingLabCode;
+	}
+
+	public void setTestingLabCode(String testingLabCode) {
+		this.testingLabCode = testingLabCode;
+	}
+
+	public String getTestingLabName() {
+		return testingLabName;
+	}
+
+	public void setTestingLabName(String testingLabName) {
+		this.testingLabName = testingLabName;
+	}
+
+	public String getIcs() {
+		return ics;
+	}
+
+	public void setIcs(String ics) {
+		this.ics = ics;
+	}
+
+	public Boolean getSedTesting() {
+		return sedTesting;
+	}
+
+	public void setSedTesting(Boolean sedTesting) {
+		this.sedTesting = sedTesting;
+	}
+
+	public Boolean getQmsTesting() {
+		return qmsTesting;
+	}
+
+	public void setQmsTesting(Boolean qmsTesting) {
+		this.qmsTesting = qmsTesting;
+	}	
 }

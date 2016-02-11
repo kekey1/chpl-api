@@ -23,7 +23,7 @@ public class CertifiedProductSearchResultDAOImpl extends BaseDAOImpl implements
 	static final Map<String, String> columnNameRef = new HashMap<String, String>();
 	static {
 		
-		columnNameRef.put("vendor","vendor_name");
+		columnNameRef.put("developer","vendor_name");
 		columnNameRef.put("product","product_name");
 		columnNameRef.put("version","product_version");
 		columnNameRef.put("certificationEdition","year");
@@ -46,6 +46,25 @@ public class CertifiedProductSearchResultDAOImpl extends BaseDAOImpl implements
 		return dto;
 	}
 
+//	public CertifiedProductDetailsDTO getAllDetailsById(Long productId) throws EntityRetrievalException {		
+//		Query query = entityManager.createQuery( "from CertifiedProductDetailsEntity products "
+//				+ "LEFT OUTER JOIN FETCH products.additionalSoftware "
+//				+ "LEFT OUTER JOIN FETCH products.certResults "
+//				+ "LEFT OUTER JOIN FETCH products.cqmResults "
+//				+ " where products.id = :entityId", CertifiedProductDetailsEntity.class);
+//		query.setParameter("entityId", productId);
+//		
+//		Collection<CertifiedProductDetailsEntity> results = new LinkedHashSet<CertifiedProductDetailsEntity>(query.getResultList());
+//		if(results == null || results.size() == 0) {
+//			return new CertifiedProductDetailsDTO();
+//		}
+//		
+//		CertifiedProductDetailsEntity result = results.iterator().next();
+//		CertifiedProductDetailsDTO dto = new CertifiedProductDetailsDTO(result);
+//
+//		return dto;
+//	}
+	
 	@Override
 	public List<CertifiedProductDetailsDTO> search(
 			SearchRequest searchRequest) {
@@ -119,9 +138,10 @@ public class CertifiedProductSearchResultDAOImpl extends BaseDAOImpl implements
 				+ "product_version_id, "
 				+ "certification_body_id, " 
 				+ "testing_lab_id, "
+				+ "testing_lab_name, "
+				+ "testing_lab_code, "
 				+ "chpl_product_number,"
 				+ "report_file_location, "
-				+ "quality_management_system_att, "
 				+ "acb_certification_id, "
 				+ "practice_type_id, "
 				+ "product_classification_type_id, "
@@ -130,8 +150,15 @@ public class CertifiedProductSearchResultDAOImpl extends BaseDAOImpl implements
 				+ "deleted, "
 				+ "visible_on_chpl, "
 				+ "privacy_attestation, "
+				+ "terms_of_use_url, "
+				+ "api_documentation_url, "
+				+ "ics, "
+				+ "sed, "
+				+ "qms, "
+				+ "transparency_attestation, "
 				+ "year, "
 				+ "certification_body_name, "
+				+ "certification_body_code, "
 				+ "product_classification_name, "
 				+ "practice_type_name, "
 				+ "product_version, "
@@ -139,11 +166,18 @@ public class CertifiedProductSearchResultDAOImpl extends BaseDAOImpl implements
 				+ "product_name, "
 				+ "vendor_id, "
 				+ "vendor_name, "
+				+ "vendor_code, "
 				+ "certification_date, "
 				+ "count_certifications, "
 				+ "count_cqms, "
 				+ "last_modified_date, "
-				+ "certification_status_name "
+				+ "certification_status_name, "
+				+ "product_code, "
+				+ "version_code, "
+				+ "ics_code, "
+				+ "additional_software_code, "
+				+ "certified_date_code, "
+				+ "count_corrective_action_plans "
  
 				+ "FROM "
 				
@@ -158,9 +192,9 @@ public class CertifiedProductSearchResultDAOImpl extends BaseDAOImpl implements
 				+ "WHERE deleted <> true ";
 		
 		
-		if ((searchRequest.getVendor() != null) && (searchRequest.getProduct() != null)){
+		if ((searchRequest.getDeveloper() != null) && (searchRequest.getProduct() != null)){
 			queryStr +=  " AND ((UPPER(vendor_name) LIKE UPPER(:vendorname)) AND (UPPER(product_name) LIKE UPPER(:productname))) ";
-		} else if (searchRequest.getVendor() != null){
+		} else if (searchRequest.getDeveloper() != null){
 			queryStr +=  " AND (UPPER(vendor_name) LIKE UPPER(:vendorname)) ";
 		} else if (searchRequest.getProduct() != null){
 			queryStr +=  " AND (UPPER(product_name) LIKE UPPER(:productname)) ";
@@ -202,6 +236,14 @@ public class CertifiedProductSearchResultDAOImpl extends BaseDAOImpl implements
 		}
 		
 		
+		if (searchRequest.getHasCAP().toLowerCase().startsWith("yes")){
+			queryStr += " AND (count_corrective_action_plans > 0) ";
+		} else if (searchRequest.getHasCAP().toLowerCase().startsWith("no")){
+			queryStr += " AND (count_corrective_action_plans = 0 ) ";
+		} // In the case of no specification, or "both" do nothing, we want all results.
+		
+		
+		
 		queryStr += " ORDER BY "+columnNameRef.get(searchRequest.getOrderBy())+" ";
 		
 		String sortOrder = "ASC ";
@@ -222,8 +264,8 @@ public class CertifiedProductSearchResultDAOImpl extends BaseDAOImpl implements
 			query.setParameter("searchterm", "%"+searchRequest.getSearchTerm()+"%");
 		}
 		
-		if (searchRequest.getVendor() != null){
-			query.setParameter("vendorname", "%"+searchRequest.getVendor()+"%");
+		if (searchRequest.getDeveloper() != null){
+			query.setParameter("vendorname", "%"+searchRequest.getDeveloper()+"%");
 		}
 		
 		if (searchRequest.getProduct() != null){
@@ -261,9 +303,10 @@ public class CertifiedProductSearchResultDAOImpl extends BaseDAOImpl implements
 				+ "product_version_id, "
 				+ "certification_body_id," 
 				+ "testing_lab_id, "
+				+ "testing_lab_name, "
+				+ "testing_lab_code, "
 				+ "chpl_product_number,"
 				+ "report_file_location, "
-				+ "quality_management_system_att, "
 				+ "acb_certification_id, "
 				+ "practice_type_id, "
 				+ "product_classification_type_id, "
@@ -272,8 +315,15 @@ public class CertifiedProductSearchResultDAOImpl extends BaseDAOImpl implements
 				+ "deleted, "
 				+ "visible_on_chpl, "
 				+ "privacy_attestation, "
+				+ "terms_of_use_url, "
+				+ "api_documentation_url, "
+				+ "ics, "
+				+ "sed, "
+				+ "qms, "
+				+ "transparency_attestation, "
 				+ "year, "
 				+ "certification_body_name, "
+				+ "certification_body_code, "
 				+ "product_classification_name, "
 				+ "practice_type_name, "
 				+ "product_version, "
@@ -281,11 +331,18 @@ public class CertifiedProductSearchResultDAOImpl extends BaseDAOImpl implements
 				+ "product_name, "
 				+ "vendor_id, "
 				+ "vendor_name, "
+				+ "vendor_code, "
 				+ "certification_date, "
 				+ "count_certifications, "
 				+ "count_cqms, "
 				+ "last_modified_date, "
-				+ "certification_status_name "
+				+ "certification_status_name, "
+				+ "product_code, "
+				+ "version_code, "
+				+ "ics_code, "
+				+ "additional_software_code, "
+				+ "certified_date_code, "
+				+ "count_corrective_action_plans "
 				
 				+ "FROM ( "
 
@@ -302,9 +359,9 @@ public class CertifiedProductSearchResultDAOImpl extends BaseDAOImpl implements
 				+"WHERE deleted <> true ";
 		
 		
-		if ((searchRequest.getVendor() != null) && (searchRequest.getProduct() != null)){
+		if ((searchRequest.getDeveloper() != null) && (searchRequest.getProduct() != null)){
 			queryStr +=  " AND ((UPPER(vendor_name) LIKE UPPER(:vendorname)) AND (UPPER(product_name) LIKE UPPER(:productname))) ";
-		} else if (searchRequest.getVendor() != null){
+		} else if (searchRequest.getDeveloper() != null){
 			queryStr +=  " AND (UPPER(vendor_name) LIKE UPPER(:vendorname)) ";
 		} else if (searchRequest.getProduct() != null){
 			queryStr +=  " AND (UPPER(product_name) LIKE UPPER(:productname)) ";
@@ -345,6 +402,13 @@ public class CertifiedProductSearchResultDAOImpl extends BaseDAOImpl implements
 		}
 		
 		
+		if (searchRequest.getHasCAP().toLowerCase().startsWith("yes")){
+			queryStr += " AND (count_corrective_action_plans > 0) ";
+		} else if (searchRequest.getHasCAP().toLowerCase().startsWith("no")){
+			queryStr += " AND (count_corrective_action_plans = 0 ) ";
+		} // In the case of no specification, or "both" do nothing, we want all results.
+		
+		
 		queryStr += " ORDER BY "+columnNameRef.get(searchRequest.getOrderBy())+" ";
 		
 		String sortOrder = "ASC ";
@@ -365,8 +429,8 @@ public class CertifiedProductSearchResultDAOImpl extends BaseDAOImpl implements
 		// Use hashset in case list contains duplicates
 		query.setParameter("ncerts", new HashSet<String>(searchRequest.getCertificationCriteria()).size());
 		
-		if (searchRequest.getVendor() != null){
-			query.setParameter("vendorname", "%"+searchRequest.getVendor()+"%");
+		if (searchRequest.getDeveloper() != null){
+			query.setParameter("vendorname", "%"+searchRequest.getDeveloper()+"%");
 		}
 		
 		if (searchRequest.getProduct() != null){
@@ -403,10 +467,11 @@ public class CertifiedProductSearchResultDAOImpl extends BaseDAOImpl implements
 				+ "certification_edition_id, " 
 				+ "product_version_id, " 
 				+ "testing_lab_id, "
+				+ "testing_lab_name, "
+				+ "testing_lab_code, "
 				+ "certification_body_id, " 
 				+ "chpl_product_number, "
 				+ "report_file_location, "
-				+ "quality_management_system_att, "
 				+ "acb_certification_id, "
 				+ "practice_type_id, "
 				+ "product_classification_type_id, "
@@ -415,8 +480,15 @@ public class CertifiedProductSearchResultDAOImpl extends BaseDAOImpl implements
 				+ "deleted, "
 				+ "visible_on_chpl, "
 				+ "privacy_attestation, " 
+				+ "terms_of_use_url, "
+				+ "api_documentation_url, "
+				+ "ics, "
+				+ "sed, "
+				+ "qms, "
+				+ "transparency_attestation, "
 				+ "year, "
 				+ "certification_body_name, "
+				+ "certification_body_code, "
 				+ "product_classification_name, "
 				+ "practice_type_name, "
 				+ "product_version, "
@@ -424,11 +496,18 @@ public class CertifiedProductSearchResultDAOImpl extends BaseDAOImpl implements
 				+ "product_name, "
 				+ "vendor_id, "
 				+ "vendor_name, "
+				+ "vendor_code, "
 				+ "certification_date, "
 				+ "count_certifications, "
 				+ "count_cqms, "
 				+ "last_modified_date, "
-				+ "certification_status_name "
+				+ "certification_status_name, "
+				+ "product_code, "
+				+ "version_code, "
+				+ "ics_code, "
+				+ "additional_software_code, "
+				+ "certified_date_code, "
+				+ "count_corrective_action_plans "
 
 				+ "FROM "
 
@@ -453,9 +532,9 @@ public class CertifiedProductSearchResultDAOImpl extends BaseDAOImpl implements
 				+ " ";
 		
 		
-		if ((searchRequest.getVendor() != null) && (searchRequest.getProduct() != null)){
+		if ((searchRequest.getDeveloper() != null) && (searchRequest.getProduct() != null)){
 			queryStr +=  " AND ((UPPER(vendor_name) LIKE UPPER(:vendorname)) AND (UPPER(product_name) LIKE UPPER(:productname))) ";
-		} else if (searchRequest.getVendor() != null){
+		} else if (searchRequest.getDeveloper() != null){
 			queryStr +=  " AND (UPPER(vendor_name) LIKE UPPER(:vendorname)) ";
 		} else if (searchRequest.getProduct() != null){
 			queryStr +=  " AND (UPPER(product_name) LIKE UPPER(:productname)) ";
@@ -497,6 +576,13 @@ public class CertifiedProductSearchResultDAOImpl extends BaseDAOImpl implements
 		}
 		
 		
+		if (searchRequest.getHasCAP().toLowerCase().startsWith("yes")){
+			queryStr += " AND (count_corrective_action_plans > 0) ";
+		} else if (searchRequest.getHasCAP().toLowerCase().startsWith("no")){
+			queryStr += " AND (count_corrective_action_plans = 0 ) ";
+		} // In the case of no specification, or "both" do nothing, we want all results.
+		
+		
 		queryStr += " ORDER BY "+columnNameRef.get(searchRequest.getOrderBy())+" ";
 		
 		String sortOrder = "ASC ";
@@ -520,8 +606,8 @@ public class CertifiedProductSearchResultDAOImpl extends BaseDAOImpl implements
 		// Use hashset in case list contains duplicates
 		query.setParameter("ncqms", new HashSet<String>(searchRequest.getCqms()).size());
 		
-		if (searchRequest.getVendor() != null){
-			query.setParameter("vendorname", "%"+searchRequest.getVendor()+"%");
+		if (searchRequest.getDeveloper() != null){
+			query.setParameter("vendorname", "%"+searchRequest.getDeveloper()+"%");
 		}
 		
 		if (searchRequest.getProduct() != null){
@@ -554,9 +640,9 @@ public class CertifiedProductSearchResultDAOImpl extends BaseDAOImpl implements
 		
 		String queryStr = "from CertifiedProductDetailsEntity where (NOT deleted = true)";
 		
-		if ((searchRequest.getVendor() != null) && (searchRequest.getProduct() != null)){
+		if ((searchRequest.getDeveloper() != null) && (searchRequest.getProduct() != null)){
 			queryStr +=  " AND ((UPPER(vendor_name) LIKE UPPER(:vendorname)) AND (UPPER(product_name) LIKE UPPER(:productname))) ";
-		} else if (searchRequest.getVendor() != null){
+		} else if (searchRequest.getDeveloper() != null){
 			queryStr +=  " AND (UPPER(vendor_name) LIKE UPPER(:vendorname)) ";
 		} else if (searchRequest.getProduct() != null){
 			queryStr +=  " AND (UPPER(product_name) LIKE UPPER(:productname)) ";
@@ -597,6 +683,13 @@ public class CertifiedProductSearchResultDAOImpl extends BaseDAOImpl implements
 		}
 		
 		
+		if (searchRequest.getHasCAP().toLowerCase().startsWith("yes")){
+			queryStr += " AND (count_corrective_action_plans > 0) ";
+		} else if (searchRequest.getHasCAP().toLowerCase().startsWith("no")){
+			queryStr += " AND (count_corrective_action_plans = 0 ) ";
+		} // In the case of no specification, or "both" do nothing, we want all results.
+		
+		
 		queryStr += " ORDER BY "+columnNameRef.get(searchRequest.getOrderBy())+" ";
 		
 		String sortOrder = "ASC ";
@@ -612,8 +705,8 @@ public class CertifiedProductSearchResultDAOImpl extends BaseDAOImpl implements
 			query.setParameter("searchterm", "%"+searchRequest.getSearchTerm()+"%");
 		}
 		
-		if (searchRequest.getVendor() != null){
-			query.setParameter("vendorname", "%"+searchRequest.getVendor()+"%");
+		if (searchRequest.getDeveloper() != null){
+			query.setParameter("vendorname", "%"+searchRequest.getDeveloper()+"%");
 		}
 		
 		if (searchRequest.getProduct() != null){
@@ -698,9 +791,9 @@ public class CertifiedProductSearchResultDAOImpl extends BaseDAOImpl implements
 				
 				+ "WHERE deleted <> true ";
 		
-		if ((searchRequest.getVendor() != null) && (searchRequest.getProduct() != null)){
+		if ((searchRequest.getDeveloper() != null) && (searchRequest.getProduct() != null)){
 			queryStr +=  " AND ((UPPER(vendor_name) LIKE UPPER(:vendorname)) AND (UPPER(product_name) LIKE UPPER(:productname))) ";
-		} else if (searchRequest.getVendor() != null){
+		} else if (searchRequest.getDeveloper() != null){
 			queryStr +=  " AND (UPPER(vendor_name) LIKE UPPER(:vendorname)) ";
 		} else if (searchRequest.getProduct() != null){
 			queryStr +=  " AND (UPPER(product_name) LIKE UPPER(:productname)) ";
@@ -740,6 +833,12 @@ public class CertifiedProductSearchResultDAOImpl extends BaseDAOImpl implements
 			queryStr += " AND (visible_on_chpl = true ) ";
 		}
 		
+		if (searchRequest.getHasCAP().toLowerCase().startsWith("yes")){
+			queryStr += " AND (count_corrective_action_plans > 0) ";
+		} else if (searchRequest.getHasCAP().toLowerCase().startsWith("no")){
+			queryStr += " AND (count_corrective_action_plans = 0 ) ";
+		} // In the case of no specification, or "both" do nothing, we want all results.
+		
 		
 		Query query = entityManager.createNativeQuery(queryStr);
 		
@@ -752,8 +851,8 @@ public class CertifiedProductSearchResultDAOImpl extends BaseDAOImpl implements
 		// Use hashset in case list contains duplicates
 		query.setParameter("ncqms", new HashSet<String>(searchRequest.getCqms()).size());
 		
-		if (searchRequest.getVendor() != null){
-			query.setParameter("vendorname", "%"+searchRequest.getVendor()+"%");
+		if (searchRequest.getDeveloper() != null){
+			query.setParameter("vendorname", "%"+searchRequest.getDeveloper()+"%");
 		}
 		
 		if (searchRequest.getProduct() != null){
@@ -803,9 +902,9 @@ public class CertifiedProductSearchResultDAOImpl extends BaseDAOImpl implements
 				+"WHERE deleted <> true ";
 		
 		
-		if ((searchRequest.getVendor() != null) && (searchRequest.getProduct() != null)){
+		if ((searchRequest.getDeveloper() != null) && (searchRequest.getProduct() != null)){
 			queryStr +=  " AND ((UPPER(vendor_name) LIKE UPPER(:vendorname)) AND (UPPER(product_name) LIKE UPPER(:productname))) ";
-		} else if (searchRequest.getVendor() != null){
+		} else if (searchRequest.getDeveloper() != null){
 			queryStr +=  " AND (UPPER(vendor_name) LIKE UPPER(:vendorname)) ";
 		} else if (searchRequest.getProduct() != null){
 			queryStr +=  " AND (UPPER(product_name) LIKE UPPER(:productname)) ";
@@ -846,6 +945,13 @@ public class CertifiedProductSearchResultDAOImpl extends BaseDAOImpl implements
 		}
 		
 		
+		if (searchRequest.getHasCAP().toLowerCase().startsWith("yes")){
+			queryStr += " AND (count_corrective_action_plans > 0) ";
+		} else if (searchRequest.getHasCAP().toLowerCase().startsWith("no")){
+			queryStr += " AND (count_corrective_action_plans = 0 ) ";
+		} // In the case of no specification, or "both" do nothing, we want all results.
+		
+		
 		Query query = entityManager.createNativeQuery(queryStr);
 		
 		if (searchRequest.getSearchTerm() != null){
@@ -857,8 +963,8 @@ public class CertifiedProductSearchResultDAOImpl extends BaseDAOImpl implements
 		// Use hashset in case list contains duplicates
 		query.setParameter("ncerts", new HashSet<String>(searchRequest.getCertificationCriteria()).size());
 		
-		if (searchRequest.getVendor() != null){
-			query.setParameter("vendorname", "%"+searchRequest.getVendor()+"%");
+		if (searchRequest.getDeveloper() != null){
+			query.setParameter("vendorname", "%"+searchRequest.getDeveloper()+"%");
 		}
 		
 		if (searchRequest.getProduct() != null){
@@ -915,9 +1021,9 @@ public class CertifiedProductSearchResultDAOImpl extends BaseDAOImpl implements
 				+ " ";
 		
 		
-		if ((searchRequest.getVendor() != null) && (searchRequest.getProduct() != null)){
+		if ((searchRequest.getDeveloper() != null) && (searchRequest.getProduct() != null)){
 			queryStr +=  " AND ((UPPER(vendor_name) LIKE UPPER(:vendorname)) AND (UPPER(product_name) LIKE UPPER(:productname))) ";
-		} else if (searchRequest.getVendor() != null){
+		} else if (searchRequest.getDeveloper() != null){
 			queryStr +=  " AND (UPPER(vendor_name) LIKE UPPER(:vendorname)) ";
 		} else if (searchRequest.getProduct() != null){
 			queryStr +=  " AND (UPPER(product_name) LIKE UPPER(:productname)) ";
@@ -957,6 +1063,13 @@ public class CertifiedProductSearchResultDAOImpl extends BaseDAOImpl implements
 			queryStr += " AND (visible_on_chpl = true ) ";
 		}
 		
+		
+		if (searchRequest.getHasCAP().toLowerCase().startsWith("yes")){
+			queryStr += " AND (count_corrective_action_plans > 0) ";
+		} else if (searchRequest.getHasCAP().toLowerCase().startsWith("no")){
+			queryStr += " AND (count_corrective_action_plans = 0 ) ";
+		} // In the case of no specification, or "both" do nothing, we want all results.
+		
 				
 		Query query = entityManager.createNativeQuery(queryStr);
 		
@@ -972,8 +1085,8 @@ public class CertifiedProductSearchResultDAOImpl extends BaseDAOImpl implements
 		// Use hashset in case list contains duplicates
 		query.setParameter("ncqms", new HashSet<String>(searchRequest.getCqms()).size());
 		
-		if (searchRequest.getVendor() != null){
-			query.setParameter("vendorname", "%"+searchRequest.getVendor()+"%");
+		if (searchRequest.getDeveloper() != null){
+			query.setParameter("vendorname", "%"+searchRequest.getDeveloper()+"%");
 		}
 		
 		if (searchRequest.getProduct() != null){
@@ -1006,9 +1119,9 @@ public class CertifiedProductSearchResultDAOImpl extends BaseDAOImpl implements
 		
 		String queryStr = "Select count(e.id) from CertifiedProductDetailsEntity e where (NOT deleted = true)";
 		
-		if ((searchRequest.getVendor() != null) && (searchRequest.getProduct() != null)){
+		if ((searchRequest.getDeveloper() != null) && (searchRequest.getProduct() != null)){
 			queryStr +=  " AND ((UPPER(vendor_name) LIKE UPPER(:vendorname)) AND (UPPER(product_name) LIKE UPPER(:productname))) ";
-		} else if (searchRequest.getVendor() != null){
+		} else if (searchRequest.getDeveloper() != null){
 			queryStr +=  " AND (UPPER(vendor_name) LIKE UPPER(:vendorname)) ";
 		} else if (searchRequest.getProduct() != null){
 			queryStr +=  " AND (UPPER(product_name) LIKE UPPER(:productname)) ";
@@ -1049,6 +1162,13 @@ public class CertifiedProductSearchResultDAOImpl extends BaseDAOImpl implements
 		}
 		
 		
+		if (searchRequest.getHasCAP().toLowerCase().startsWith("yes")){
+			queryStr += " AND (count_corrective_action_plans > 0) ";
+		} else if (searchRequest.getHasCAP().toLowerCase().startsWith("no")){
+			queryStr += " AND (count_corrective_action_plans = 0 ) ";
+		} // In the case of no specification, or "both" do nothing, we want all results.
+		
+		
 		Query query = entityManager.createQuery(queryStr);
 		
 		
@@ -1056,8 +1176,8 @@ public class CertifiedProductSearchResultDAOImpl extends BaseDAOImpl implements
 			query.setParameter("searchterm", "%"+searchRequest.getSearchTerm()+"%");
 		}
 		
-		if (searchRequest.getVendor() != null){
-			query.setParameter("vendorname", "%"+searchRequest.getVendor()+"%");
+		if (searchRequest.getDeveloper() != null){
+			query.setParameter("vendorname", "%"+searchRequest.getDeveloper()+"%");
 		}
 		
 		if (searchRequest.getProduct() != null){
@@ -1083,7 +1203,6 @@ public class CertifiedProductSearchResultDAOImpl extends BaseDAOImpl implements
 		if (searchRequest.getVersion() != null) {
 			query.setParameter("version", "%"+searchRequest.getVersion()+"%");
 		}
-		
 		return query;
 	}
 	

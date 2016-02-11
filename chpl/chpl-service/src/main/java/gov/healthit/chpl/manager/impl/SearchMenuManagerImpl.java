@@ -14,11 +14,12 @@ import gov.healthit.chpl.dao.CertificationCriterionDAO;
 import gov.healthit.chpl.dao.CertificationEditionDAO;
 import gov.healthit.chpl.dao.CertificationStatusDAO;
 import gov.healthit.chpl.dao.CertifiedProductDAO;
+import gov.healthit.chpl.dao.EntityRetrievalException;
 import gov.healthit.chpl.dao.PracticeTypeDAO;
 import gov.healthit.chpl.dao.ProductClassificationTypeDAO;
 import gov.healthit.chpl.dao.ProductDAO;
 import gov.healthit.chpl.dao.ProductVersionDAO;
-import gov.healthit.chpl.dao.VendorDAO;
+import gov.healthit.chpl.dao.DeveloperDAO;
 import gov.healthit.chpl.domain.PopulateSearchOptions;
 import gov.healthit.chpl.domain.DescriptiveModel;
 import gov.healthit.chpl.domain.KeyValueModel;
@@ -30,7 +31,7 @@ import gov.healthit.chpl.dto.CertificationStatusDTO;
 import gov.healthit.chpl.dto.PracticeTypeDTO;
 import gov.healthit.chpl.dto.ProductClassificationTypeDTO;
 import gov.healthit.chpl.dto.ProductDTO;
-import gov.healthit.chpl.dto.VendorDTO;
+import gov.healthit.chpl.dto.DeveloperDTO;
 import gov.healthit.chpl.manager.SearchMenuManager;
 
 @Service
@@ -67,7 +68,7 @@ public class SearchMenuManagerImpl implements SearchMenuManager {
 	private PracticeTypeDAO practiceTypeDAO;
 	
 	@Autowired
-	private VendorDAO vendorDAO;
+	private DeveloperDAO developerDAO;
 	
 	
 	@Transactional
@@ -86,12 +87,20 @@ public class SearchMenuManagerImpl implements SearchMenuManager {
 
 	@Transactional
 	@Override
-	public Set<KeyValueModel> getEditionNames() {
+	public Set<KeyValueModel> getEditionNames(Boolean simple) {
+		
+		
 		
 		List<CertificationEditionDTO> certificationEditions = certificationEditionDAO.findAll();
 		Set<KeyValueModel> editionNames = new HashSet<KeyValueModel>();
 		
 		for (CertificationEditionDTO dto : certificationEditions) {
+			
+			if (simple){
+				if (dto.getYear().equals("2011")){
+					continue;
+				}
+			}
 			editionNames.add(new KeyValueModel(dto.getId(), dto.getYear()));
 		}
 		
@@ -141,23 +150,23 @@ public class SearchMenuManagerImpl implements SearchMenuManager {
 
 	@Transactional
 	@Override
-	public Set<KeyValueModel> getVendorNames() {
+	public Set<KeyValueModel> getDeveloperNames() {
 		
-		List<VendorDTO> vendorDTOs = this.vendorDAO.findAll();
-		Set<KeyValueModel> vendorNames = new HashSet<KeyValueModel>();
+		List<DeveloperDTO> developerDTOs = this.developerDAO.findAll();
+		Set<KeyValueModel> developerNames = new HashSet<KeyValueModel>();
 		
-		for (VendorDTO dto : vendorDTOs) {
-			vendorNames.add(new KeyValueModel(dto.getId(), dto.getName()));
+		for (DeveloperDTO dto : developerDTOs) {
+			developerNames.add(new KeyValueModel(dto.getId(), dto.getName()));
 		}
 		
-		return vendorNames;
+		return developerNames;
 	}
 
 	@Transactional
 	@Override
 	public Set<KeyValueModel> getCertBodyNames() {
 		
-		List<CertificationBodyDTO> dtos = this.certificationBodyDAO.findAll();
+		List<CertificationBodyDTO> dtos = this.certificationBodyDAO.findAll(false);
 		Set<KeyValueModel> acbNames = new HashSet<KeyValueModel>();
 		
 		for (CertificationBodyDTO dto : dtos) {
@@ -169,12 +178,17 @@ public class SearchMenuManagerImpl implements SearchMenuManager {
 	
 	@Transactional
 	@Override
-	public Set<DescriptiveModel> getCertificationCriterionNumbers(){
+	public Set<DescriptiveModel> getCertificationCriterionNumbers(Boolean simple) throws EntityRetrievalException{
 
 		List<CertificationCriterionDTO> dtos = this.certificationCriterionDAO.findAll();
 		Set<DescriptiveModel> criterionNames = new HashSet<DescriptiveModel>();
 		
 		for (CertificationCriterionDTO dto : dtos) {
+			if (simple){
+				if (certificationEditionDAO.getById(dto.getCertificationEditionId()).getRetired().equals(true)) {
+					continue;
+				}
+			}
 			criterionNames.add( new DescriptiveModel(dto.getId(), dto.getNumber(), dto.getTitle()));
 		}
 		
@@ -184,7 +198,7 @@ public class SearchMenuManagerImpl implements SearchMenuManager {
 	
 	@Transactional
 	@Override
-	public Set<DescriptiveModel> getCQMCriterionNumbers(){
+	public Set<DescriptiveModel> getCQMCriterionNumbers(Boolean simple){
 
 		List<CQMCriterionDTO> dtos = this.cqmCriterionDAO.findAll();
 		Set<DescriptiveModel> criterionNames = new HashSet<DescriptiveModel>();
@@ -193,10 +207,18 @@ public class SearchMenuManagerImpl implements SearchMenuManager {
 			
 			String idNumber;
 			
-			if (dto.getCmsId() != null){
-				idNumber = dto.getCmsId();
-			} else {
-				idNumber = dto.getNqfNumber();
+			if (simple){
+				if (dto.getCmsId() != null){
+					idNumber = dto.getCmsId();
+				} else {
+					continue;
+				}
+			} else {	
+				if (dto.getCmsId() != null){
+					idNumber = dto.getCmsId();
+				} else {
+					idNumber = dto.getNqfNumber();
+				}
 			}
 			
 			criterionNames.add( new DescriptiveModel(dto.getId(), idNumber, dto.getTitle()));
@@ -207,18 +229,18 @@ public class SearchMenuManagerImpl implements SearchMenuManager {
 
 	@Transactional
 	@Override
-	public PopulateSearchOptions getPopulateSearchOptions() {
+	public PopulateSearchOptions getPopulateSearchOptions(Boolean simple) throws EntityRetrievalException {
 		
 		PopulateSearchOptions searchOptions = new PopulateSearchOptions();
 		searchOptions.setCertBodyNames(this.getCertBodyNames());
-		searchOptions.setEditions(this.getEditionNames());
+		searchOptions.setEditions(this.getEditionNames(simple));
 		searchOptions.setCertificationStatuses(this.getCertificationStatuses());
 		searchOptions.setPracticeTypeNames(this.getPracticeTypeNames());
 		searchOptions.setProductClassifications(this.getClassificationNames());
 		searchOptions.setProductNames(this.getProductNames());
-		searchOptions.setVendorNames(this.getVendorNames());
-		searchOptions.setCqmCriterionNumbers(this.getCQMCriterionNumbers());
-		searchOptions.setCertificationCriterionNumbers(this.getCertificationCriterionNumbers());
+		searchOptions.setDeveloperNames(this.getDeveloperNames());
+		searchOptions.setCqmCriterionNumbers(this.getCQMCriterionNumbers(simple));
+		searchOptions.setCertificationCriterionNumbers(this.getCertificationCriterionNumbers(simple));
 		
 		return searchOptions;
 		

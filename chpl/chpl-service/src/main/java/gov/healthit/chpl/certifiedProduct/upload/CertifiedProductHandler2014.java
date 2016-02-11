@@ -19,7 +19,7 @@ import gov.healthit.chpl.dto.PracticeTypeDTO;
 import gov.healthit.chpl.dto.ProductClassificationTypeDTO;
 import gov.healthit.chpl.dto.ProductDTO;
 import gov.healthit.chpl.dto.ProductVersionDTO;
-import gov.healthit.chpl.dto.VendorDTO;
+import gov.healthit.chpl.dto.DeveloperDTO;
 import gov.healthit.chpl.entity.AddressEntity;
 import gov.healthit.chpl.entity.CQMCriterionEntity;
 import gov.healthit.chpl.entity.PendingCertifiedProductEntity;
@@ -30,7 +30,7 @@ import gov.healthit.chpl.web.controller.InvalidArgumentsException;
 public class CertifiedProductHandler2014 extends CertifiedProductHandler {
 	
 	private static final Logger logger = LogManager.getLogger(CertifiedProductHandler2014.class);
-
+	
 	public PendingCertifiedProductEntity handle() {
 		PendingCertifiedProductEntity pendingCertifiedProduct = new PendingCertifiedProductEntity();
 		pendingCertifiedProduct.setStatus(getDefaultStatusId());
@@ -54,20 +54,20 @@ public class CertifiedProductHandler2014 extends CertifiedProductHandler {
 			pendingCertifiedProduct.setPracticeTypeId(foundPracticeType.getId());
 		}
 		
-		//vendor, product, version
-		String vendor = getRecord().get(colIndex++);
+		//developer, product, version
+		String developer = getRecord().get(colIndex++);
 		String product = getRecord().get(colIndex++);
 		String productVersion = getRecord().get(colIndex++);
-		pendingCertifiedProduct.setVendorName(vendor);
+		pendingCertifiedProduct.setDeveloperName(developer);
 		pendingCertifiedProduct.setProductName(product);
 		pendingCertifiedProduct.setProductVersion(productVersion);
 		
-		VendorDTO foundVendor = vendorDao.getByName(vendor);
-		if(foundVendor != null) {
-			pendingCertifiedProduct.setVendorId(foundVendor.getId());
+		DeveloperDTO foundDeveloper = developerDao.getByName(developer);
+		if(foundDeveloper != null) {
+			pendingCertifiedProduct.setDeveloperId(foundDeveloper.getId());
 			
 			//product
-			ProductDTO foundProduct = productDao.getByVendorAndName(foundVendor.getId(), product);
+			ProductDTO foundProduct = productDao.getByDeveloperAndName(foundDeveloper.getId(), product);
 			if(foundProduct != null) {
 				pendingCertifiedProduct.setProductId(foundProduct.getId());
 				
@@ -119,25 +119,25 @@ public class CertifiedProductHandler2014 extends CertifiedProductHandler {
 			pendingCertifiedProduct.setCertificationDate(null);
 		}
 		
-		//vendor address info
-		String vendorStreetAddress = getRecord().get(colIndex++);
-		String vendorState = getRecord().get(colIndex++);
-		String vendorCity = getRecord().get(colIndex++);
-		String vendorZipcode = getRecord().get(colIndex++);
-		String vendorWebsite = getRecord().get(colIndex++);
-		String vendorEmail = getRecord().get(colIndex++);
-		pendingCertifiedProduct.setVendorStreetAddress(vendorStreetAddress);
-		pendingCertifiedProduct.setVendorCity(vendorCity);
-		pendingCertifiedProduct.setVendorState(vendorState);
-		pendingCertifiedProduct.setVendorZipCode(vendorZipcode);
-		pendingCertifiedProduct.setVendorWebsite(vendorWebsite);
-		pendingCertifiedProduct.setVendorEmail(vendorEmail);
+		//developer address info
+		String developerStreetAddress = getRecord().get(colIndex++);
+		String developerState = getRecord().get(colIndex++);
+		String developerCity = getRecord().get(colIndex++);
+		String developerZipcode = getRecord().get(colIndex++);
+		String developerWebsite = getRecord().get(colIndex++);
+		String developerEmail = getRecord().get(colIndex++);
+		pendingCertifiedProduct.setDeveloperStreetAddress(developerStreetAddress);
+		pendingCertifiedProduct.setDeveloperCity(developerCity);
+		pendingCertifiedProduct.setDeveloperState(developerState);
+		pendingCertifiedProduct.setDeveloperZipCode(developerZipcode);
+		pendingCertifiedProduct.setDeveloperWebsite(developerWebsite);
+		pendingCertifiedProduct.setDeveloperEmail(developerEmail);
 		
 		AddressDTO toFind = new AddressDTO();
-		toFind.setStreetLineOne(vendorStreetAddress);
-		toFind.setCity(vendorCity);
-		toFind.setState(vendorState);
-		toFind.setZipcode(vendorZipcode);
+		toFind.setStreetLineOne(developerStreetAddress);
+		toFind.setCity(developerCity);
+		toFind.setState(developerState);
+		toFind.setZipcode(developerZipcode);
 		AddressDTO foundAddress = addressDao.getByValues(toFind);
 		if(foundAddress != null) {
 			AddressEntity addressEntity = null;
@@ -146,7 +146,7 @@ public class CertifiedProductHandler2014 extends CertifiedProductHandler {
 			} catch(EntityRetrievalException ex) {
 				addressEntity = null;
 			}
-			pendingCertifiedProduct.setVendorAddress(addressEntity);
+			pendingCertifiedProduct.setDeveloperAddress(addressEntity);
 		}
 		
 		//additional software
@@ -162,6 +162,33 @@ public class CertifiedProductHandler2014 extends CertifiedProductHandler {
 		
 		//report file location
 		pendingCertifiedProduct.setReportFileLocation(getRecord().get(colIndex++));
+		
+		//the three new (optional) fields
+		if(getHeading().size() == CertifiedProductUploadHandlerFactoryImpl.NUM_FIELDS_2014_EXTENDED) {
+			pendingCertifiedProduct.setIcs(getRecord().get(colIndex++));
+			
+			String sedData = getRecord().get(colIndex++);
+			if(!StringUtils.isEmpty(sedData)) {
+				sedData = sedData.trim();
+				if(sedData.equalsIgnoreCase("TRUE") || sedData.equals("1")) {
+					pendingCertifiedProduct.setSedTesting(Boolean.TRUE);
+				}
+			}
+			if(pendingCertifiedProduct.getSedTesting() == null) {
+				pendingCertifiedProduct.setSedTesting(Boolean.FALSE);
+			}
+			
+			String qmsData = getRecord().get(colIndex++);
+			if(!StringUtils.isEmpty(qmsData)) {
+				qmsData = qmsData.trim();
+				if(qmsData.equalsIgnoreCase("TRUE") || qmsData.equals("1")) {
+					pendingCertifiedProduct.setQmsTesting(Boolean.TRUE);
+				}
+			}
+			if(pendingCertifiedProduct.getQmsTesting() == null) {
+				pendingCertifiedProduct.setQmsTesting(Boolean.FALSE);
+			}
+		}
 		
 		//skip 2011 certifications
 		colIndex += 45;
@@ -244,7 +271,11 @@ public class CertifiedProductHandler2014 extends CertifiedProductHandler {
 			pendingCertifiedProduct.getCertificationCriterion().add(handleCertificationCriterion("170.314 (b)(4)", colIndex++));
 		} catch(InvalidArgumentsException ex) { logger.error(ex.getMessage()); }
 		try {
-			pendingCertifiedProduct.getCertificationCriterion().add(handleCertificationCriterion("170.314 (b)(5)", colIndex++));
+			if(pendingCertifiedProduct.getPracticeType().equalsIgnoreCase(PRACTICE_TYPE_AMBULATORY)) {
+				pendingCertifiedProduct.getCertificationCriterion().add(handleCertificationCriterion("170.314 (b)(5)(A)", colIndex++));
+			} else if(pendingCertifiedProduct.getPracticeType().equalsIgnoreCase(PRACTICE_TYPE_INPATIENT)) {
+				pendingCertifiedProduct.getCertificationCriterion().add(handleCertificationCriterion("170.314 (b)(5)(B)", colIndex++));
+			}
 		} catch(InvalidArgumentsException ex) { logger.error(ex.getMessage()); }
 		try {
 			pendingCertifiedProduct.getCertificationCriterion().add(handleCertificationCriterion("170.314 (b)(6)", colIndex++));

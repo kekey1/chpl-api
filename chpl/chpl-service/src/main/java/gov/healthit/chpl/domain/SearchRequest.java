@@ -7,7 +7,7 @@ public class SearchRequest {
 	
 	
 	String searchTerm = null;
-	String vendor = null;
+	String developer = null;
 	String product = null;
 	String version = null;
 	List<String> certificationCriteria = new ArrayList<String>();
@@ -17,6 +17,7 @@ public class SearchRequest {
 	String productClassification = null;
 	String practiceType = null;
 	String visibleOnCHPL = "YES";
+	String hasCAP = "BOTH";
 	String orderBy = "product";
 	Boolean sortDescending = false;
 	Integer pageNumber = 0;
@@ -29,11 +30,11 @@ public class SearchRequest {
 	public void setSearchTerm(String searchTerm) {
 		this.searchTerm = searchTerm;
 	}
-	public String getVendor() {
-		return vendor;
+	public String getDeveloper() {
+		return developer;
 	}
-	public void setVendor(String vendor) {
-		this.vendor = vendor;
+	public void setDeveloper(String developer) {
+		this.developer = developer;
 	}
 	public String getProduct() {
 		return product;
@@ -103,6 +104,12 @@ public class SearchRequest {
 	}
 	public void setVisibleOnCHPL(String visibleOnCHPL) {
 		this.visibleOnCHPL = visibleOnCHPL;
+	}
+	public String getHasCAP() {
+		return hasCAP;
+	}
+	public void setHasCAP(String hasCAP) {
+		this.hasCAP = hasCAP;
 	}
 	public Integer getPageNumber() {
 		return pageNumber;

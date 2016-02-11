@@ -1,5 +1,15 @@
 package gov.healthit.chpl.manager.impl;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
+
 import gov.healthit.chpl.dao.AdditionalSoftwareDAO;
 import gov.healthit.chpl.dao.CQMCriterionDAO;
 import gov.healthit.chpl.dao.CQMResultDetailsDAO;
@@ -14,26 +24,24 @@ import gov.healthit.chpl.domain.CQMCriterion;
 import gov.healthit.chpl.domain.CQMResultDetails;
 import gov.healthit.chpl.domain.CertificationEvent;
 import gov.healthit.chpl.domain.CertificationResult;
+import gov.healthit.chpl.domain.CertifiedProductDownloadDetails;
 import gov.healthit.chpl.domain.CertifiedProductSearchDetails;
 import gov.healthit.chpl.dto.AdditionalSoftwareDTO;
 import gov.healthit.chpl.dto.CQMCriterionDTO;
 import gov.healthit.chpl.dto.CQMResultDetailsDTO;
 import gov.healthit.chpl.dto.CertificationEventDTO;
 import gov.healthit.chpl.dto.CertificationResultDetailsDTO;
+import gov.healthit.chpl.dto.CertifiedProductDTO;
 import gov.healthit.chpl.dto.CertifiedProductDetailsDTO;
 import gov.healthit.chpl.dto.EventTypeDTO;
 import gov.healthit.chpl.manager.CertifiedProductDetailsManager;
-
-import java.util.ArrayList;
-import java.util.List;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.StringUtils;
+import gov.healthit.chpl.manager.CertifiedProductManager;
 
 @Service
 public class CertifiedProductDetailsManagerImpl implements CertifiedProductDetailsManager {
+	
+	
+	private static final Logger logger = LogManager.getLogger(CertifiedProductDetailsManagerImpl.class);
 
 	@Autowired
 	private CertifiedProductSearchResultDAO certifiedProductSearchResultDAO;
@@ -54,6 +62,9 @@ public class CertifiedProductDetailsManagerImpl implements CertifiedProductDetai
 	private CertificationEventDAO certificationEventDAO;
 	
 	@Autowired
+	private CertifiedProductManager certifiedProductManager;
+	
+	@Autowired
 	private EventTypeDAO eventTypeDAO;
 	
 
@@ -67,6 +78,7 @@ public class CertifiedProductDetailsManagerImpl implements CertifiedProductDetai
 		loadCQMCriteria();
 	}
 	
+
 	@Override
 	@Transactional
 	public CertifiedProductSearchDetails getCertifiedProductDetails(
@@ -85,15 +97,23 @@ public class CertifiedProductDetailsManagerImpl implements CertifiedProductDetai
 			
 		searchDetails.getCertificationEdition().put("id", dto.getCertificationEditionId());
 		searchDetails.getCertificationEdition().put("name", dto.getYear());
-				
+		
+		if(dto.getYear().equals("2011") || dto.getYear().equals("2014")) {
+			searchDetails.setChplProductNumber(dto.getChplProductNumber());
+		} else {
+			searchDetails.setChplProductNumber(dto.getTestingLabCode() + "." + dto.getCertificationBodyCode() + "." + 
+				dto.getDeveloperCode() + "." + dto.getProductCode() + "." + dto.getVersionCode() + 
+				"." + dto.getIcsCode() + "." + dto.getAdditionalSoftwareCode() + 
+				"." + dto.getCertifiedDateCode());
+		}
+
 		searchDetails.getCertificationStatus().put("id", dto.getCertificationStatusId());
 		searchDetails.getCertificationStatus().put("name", dto.getCertificationStatusName());
 			
 		searchDetails.getCertifyingBody().put("id", dto.getCertificationBodyId());
 		searchDetails.getCertifyingBody().put("name", dto.getCertificationBodyName());
-			
-		searchDetails.setChplProductNumber(dto.getChplProductNumber());
-		
+		searchDetails.getCertifyingBody().put("code", dto.getCertificationBodyCode());
+					
 		searchDetails.getClassificationType().put("id", dto.getProductClassificationTypeId());
 		searchDetails.getClassificationType().put("name", dto.getProductClassificationName());
 		
@@ -107,85 +127,180 @@ public class CertifiedProductDetailsManagerImpl implements CertifiedProductDetai
 		searchDetails.getProduct().put("versionId",dto.getProductVersionId());
 		searchDetails.getProduct().put("version", dto.getProductVersion());
 				
-		searchDetails.setQualityManagementSystemAtt(dto.getQualityManagementSystemAtt());
 		searchDetails.setReportFileLocation(dto.getReportFileLocation());
-		searchDetails.setTestingLabId(dto.getTestingLabId());
+		searchDetails.getTestingLab().put("id", dto.getTestingLabId());
+		searchDetails.getTestingLab().put("name", dto.getTestingLabName());
+		searchDetails.getTestingLab().put("code", dto.getTestingLabCode());
 		
-		searchDetails.getVendor().put("id", dto.getVendorId());
-		searchDetails.getVendor().put("name", dto.getVendorName());
-		
-		List<CertificationResultDetailsDTO> certificationResultDetailsDTOs = certificationResultDetailsDAO.getCertificationResultDetailsByCertifiedProductId(dto.getId());
-		List<CertificationResult> certificationResults = new ArrayList<CertificationResult>();
+		searchDetails.getDeveloper().put("id", dto.getDeveloperId());
+		searchDetails.getDeveloper().put("name", dto.getDeveloperName());
+		searchDetails.getDeveloper().put("code", dto.getDeveloperCode());
 		
 		searchDetails.setVisibleOnChpl(dto.getVisibleOnChpl());
 		searchDetails.setPrivacyAttestation(dto.getPrivacyAttestation());
+		searchDetails.setApiDocumentation(dto.getApiDocumentation());
+		searchDetails.setIcs(dto.getIcs());
+		searchDetails.setSedTesting(dto.getSedTesting());
+		searchDetails.setQmsTesting(dto.getQmsTesting());
+		
+		if(dto.getTransparencyAttestation() == null) {
+			searchDetails.setTransparencyAttestation(Boolean.FALSE);
+		} else {
+			searchDetails.setTransparencyAttestation(dto.getTransparencyAttestation());
+		}
+		searchDetails.setTermsOfUse(dto.getTermsOfUse());
 		searchDetails.setLastModifiedDate(dto.getLastModifiedDate().getTime());
 		
 		searchDetails.setCountCerts(dto.getCountCertifications());
 		searchDetails.setCountCqms(dto.getCountCqms());
+		searchDetails.setCountCorrectiveActionPlans(dto.getCountCorrectiveActionPlans());
+		
+		List<CertificationResultDetailsDTO> certificationResultDetailsDTOs = certificationResultDetailsDAO.getCertificationResultDetailsByCertifiedProductId(dto.getId());
+		List<CertificationResult> certificationResults = new ArrayList<CertificationResult>();
 		
 		for (CertificationResultDetailsDTO certResult : certificationResultDetailsDTOs){
-			CertificationResult result = new CertificationResult();
-			
-			result.setNumber(certResult.getNumber());
-			result.setSuccess(certResult.getSuccess());
-			result.setTitle(certResult.getTitle());	
+			CertificationResult result = new CertificationResult(certResult);
 			certificationResults.add(result);
-			
 		}
-		
-		
 		searchDetails.setCertificationResults(certificationResults);
 			
+		//fill in CQM results, sadly there is different data for NQFs and CMSs
 		List<CQMResultDetailsDTO> cqmResultDTOs = cqmResultDetailsDAO.getCQMResultDetailsByCertifiedProductId(dto.getId());
 		List<CQMResultDetails> cqmResults = new ArrayList<CQMResultDetails>();
-		
 		for (CQMResultDetailsDTO cqmResultDTO : cqmResultDTOs){
+			boolean existingCms = false;
+			//for a CMS, first check to see if we already have an object with the same CMS id
+			//so we can just add to it's success versions. 
+			if(dto.getYear().equals("2014") && !StringUtils.isEmpty(cqmResultDTO.getCmsId())) {
+				for(CQMResultDetails result : cqmResults) {
+					if(cqmResultDTO.getCmsId().equals(result.getCmsId())) {
+						existingCms = true;
+						result.getSuccessVersions().add(cqmResultDTO.getVersion());
+					}
+				}
+			}
 			
-			CQMResultDetails result = new CQMResultDetails();
-			
-			result.setCmsId(cqmResultDTO.getCmsId());
-			result.setNqfNumber(cqmResultDTO.getNqfNumber());
-			result.setNumber(cqmResultDTO.getNumber());
-			result.setSuccess(cqmResultDTO.getSuccess());
-			result.setTitle(cqmResultDTO.getTitle());
-			result.setVersion(cqmResultDTO.getVersion());
-			cqmResults.add(result);
-			
+			if(!existingCms) {
+				CQMResultDetails result = new CQMResultDetails();
+				result.setCmsId(cqmResultDTO.getCmsId());
+				result.setNqfNumber(cqmResultDTO.getNqfNumber());
+				result.setNumber(cqmResultDTO.getNumber());
+				result.setTitle(cqmResultDTO.getTitle());
+				result.setTypeId(cqmResultDTO.getCqmCriterionTypeId());
+				if(dto.getYear().equals("2014") && !StringUtils.isEmpty(cqmResultDTO.getCmsId())) {
+					result.getSuccessVersions().add(cqmResultDTO.getVersion());
+				} else {
+					result.setSuccess(cqmResultDTO.getSuccess());
+				}
+				cqmResults.add(result);
+			}
+		}	
+		
+		//now add allVersions for CMSs
+		if (dto.getYear().startsWith("2014")){
+			List<CQMCriterion> cqms2014 = getAvailableCQMVersions();
+			for(CQMCriterion cqm : cqms2014) {
+				boolean cqmExists = false;
+				for(CQMResultDetails details : cqmResults) {
+					if(cqm.getCmsId().equals(details.getCmsId())) {
+						cqmExists = true;
+						details.getAllVersions().add(cqm.getCqmVersion());
+					}
+				}
+				if(!cqmExists) {
+					CQMResultDetails result = new CQMResultDetails();
+					result.setCmsId(cqm.getCmsId());
+					result.setNqfNumber(cqm.getNqfNumber());
+					result.setNumber(cqm.getNumber());
+					result.setTitle(cqm.getTitle());
+					result.setSuccess(Boolean.FALSE);
+					result.getAllVersions().add(cqm.getCqmVersion());
+					result.setTypeId(cqm.getCqmCriterionTypeId());
+					cqmResults.add(result);
+				}
+			}
 		}
-				
 		searchDetails.setCqmResults(cqmResults);
-		
-		
+
 		
 		List<AdditionalSoftwareDTO> additionalSoftwareDTOs = additionalSoftwareDAO.findByCertifiedProductId(dto.getId());
 		List<AdditionalSoftware> additionalSoftware = new ArrayList<AdditionalSoftware>();
-		
-		
 		for (AdditionalSoftwareDTO additionalSoftwareDTO : additionalSoftwareDTOs){
-			AdditionalSoftware software = new AdditionalSoftware();
 			
-			software.setAdditionalSoftwareid(additionalSoftwareDTO.getId());
-			software.setCertifiedProductId(additionalSoftwareDTO.getCertifiedProductId());
-			software.setJustification(additionalSoftwareDTO.getJustification());
-			software.setName(additionalSoftwareDTO.getName());
-			software.setVersion(additionalSoftwareDTO.getVersion());
-			additionalSoftware.add(software);
+			AdditionalSoftware sw = new AdditionalSoftware();
+			sw.setAdditionalSoftwareId(additionalSoftwareDTO.getId());
+			
+			
+			sw.setCertifiedProductId(additionalSoftwareDTO.getCertifiedProductId());
+			
+			CertifiedProductDTO cp = certifiedProductManager.getById(additionalSoftwareDTO.getCertifiedProductId());
+			sw.setCertifiedProductCHPLId(cp.getChplProductNumber());
+			
+			
+			sw.setCertifiedProductSelf(additionalSoftwareDTO.getCertifiedProductSelfId());
+			
+			if (additionalSoftwareDTO.getCertifiedProductSelfId() != null){
+				CertifiedProductDTO selfCp = certifiedProductManager.getById(additionalSoftwareDTO.getCertifiedProductSelfId());
+				sw.setCertifiedProductSelfCHPLId(selfCp.getChplProductNumber());
+			}	
+
+			sw.setJustification(additionalSoftwareDTO.getJustification());
+			sw.setName(additionalSoftwareDTO.getName());
+			sw.setVersion(additionalSoftwareDTO.getVersion());
+			
+			additionalSoftware.add(sw);
 			
 		}
 		
 		searchDetails.setAdditionalSoftware(additionalSoftware);
 		
-		if (dto.getYear().startsWith("2011")){
-			searchDetails.setApplicableCqmCriteria(getAvailableNQFVersions());
-		} else {
-			searchDetails.setApplicableCqmCriteria(getAvailableCQMVersions());
-		}
-		
 		
 		searchDetails.setCertificationEvents(getCertificationEvents(dto.getId()));
 		
 		return searchDetails;
+	}
+	
+	@Override
+	@Transactional
+	public CertifiedProductDownloadDetails getCertifiedProductDownloadDetails(Long certifiedProductId) throws EntityRetrievalException {
+		
+		CertifiedProductDetailsDTO dto = certifiedProductSearchResultDAO.getById(certifiedProductId);
+		CertifiedProductDownloadDetails result = new CertifiedProductDownloadDetails(dto);
+		
+		//additional software
+		List<AdditionalSoftwareDTO> additionalSoftwareDTOs = additionalSoftwareDAO.findByCertifiedProductId(dto.getId());
+		if(additionalSoftwareDTOs != null && additionalSoftwareDTOs.size() > 0) {
+			StringBuffer additionalSoftwareBuf = new StringBuffer();
+			for(AdditionalSoftwareDTO currSoftware : additionalSoftwareDTOs) {
+				if(additionalSoftwareBuf.length() > 0) {
+					additionalSoftwareBuf.append(";");
+				}
+				additionalSoftwareBuf.append(currSoftware.getName());
+				if(!StringUtils.isEmpty(currSoftware.getVersion()) &&
+						!currSoftware.getVersion().equals("-1")) {
+					additionalSoftwareBuf.append(" v." + currSoftware.getVersion());
+				}
+			}
+			result.setAdditionalSoftware(additionalSoftwareBuf.toString());
+		}
+		
+		//certs, call these methods by reflection
+		List<CertificationResultDetailsDTO> certResultDTOs = certificationResultDetailsDAO.getCertificationResultDetailsByCertifiedProductId(dto.getId());
+		for (CertificationResultDetailsDTO certResult : certResultDTOs){
+			result.setCertificationSuccess(certResult.getNumber(), certResult.getSuccess().booleanValue());
+		}
+		
+		//cqm results
+		List<CQMResultDetailsDTO> cqmResultDTOs = cqmResultDetailsDAO.getCQMResultDetailsByCertifiedProductId(dto.getId());
+		for (CQMResultDetailsDTO cqmResultDTO : cqmResultDTOs) { 
+			if(dto.getYear().equals("2014") && !StringUtils.isEmpty(cqmResultDTO.getCmsId())) {
+				result.addCmsVersion(cqmResultDTO.getCmsId(), cqmResultDTO.getVersion());
+			} else if(dto.getYear().equals("2011") && !StringUtils.isEmpty(cqmResultDTO.getNqfNumber())) {
+				result.setNqfSuccess(cqmResultDTO.getNqfNumber(), cqmResultDTO.getSuccess().booleanValue());
+			}
+		}	
+		
+		return result;
 	}
 	
 	public List<CQMCriterion> getCqmCriteria() {

@@ -44,14 +44,14 @@ public class ProductManagerImpl implements ProductManager {
 	
 	@Override
 	@Transactional(readOnly = true)
-	public List<ProductDTO> getByVendor(Long vendorId) {
-		return productDao.getByVendor(vendorId);
+	public List<ProductDTO> getByDeveloper(Long developerId) {
+		return productDao.getByDeveloper(developerId);
 	}
 
 	@Override
 	@Transactional(readOnly = true)
-	public List<ProductDTO> getByVendors(List<Long> vendorIds) {
-		return productDao.getByVendors(vendorIds);
+	public List<ProductDTO> getByDevelopers(List<Long> developerIds) {
+		return productDao.getByDevelopers(developerIds);
 	}
 	
 	@Override
@@ -99,15 +99,16 @@ public class ProductManagerImpl implements ProductManager {
 	public void delete(Long productId) throws EntityRetrievalException, EntityCreationException, JsonProcessingException {
 		
 		ProductDTO toDelete = productDao.getById(productId);
+		String activityMsg = "Product "+ toDelete.getName() +" was deleted.";
+
 		productDao.delete(productId);
-		String activityMsg = "Product "+productId.toString()+" was deleted.";
 		activityManager.addActivity(ActivityConcept.ACTIVITY_CONCEPT_PRODUCT, productId, activityMsg, toDelete , null);
 		
 	}
 	
 	@Override
 	@Transactional(readOnly = false)
-	@PreAuthorize("hasRole('ROLE_ADMIN') or hasRole('ROLE_ACB_ADMIN') or hasRole('ROLE_ACB_STAFF')")
+	@PreAuthorize("hasRole('ROLE_ADMIN')")
 	public ProductDTO merge(List<Long> productIdsToMerge, ProductDTO toCreate) throws EntityRetrievalException, EntityCreationException, JsonProcessingException {
 		
 		List<ProductDTO> beforeProducts = new ArrayList<ProductDTO>();

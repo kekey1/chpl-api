@@ -2,8 +2,10 @@ package gov.healthit.chpl.domain;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.springframework.util.StringUtils;
 
@@ -18,7 +20,7 @@ public class PendingCertifiedProductDetails extends CertifiedProductSearchDetail
 	private List<String> warningMessages;
 	private String uploadNotes;
 	private String recordStatus;
-	private Map<String, Object> vendorAddress;
+	private Map<String, Object> developerAddress;
 	
 	public PendingCertifiedProductDetails() {}
 	
@@ -28,11 +30,13 @@ public class PendingCertifiedProductDetails extends CertifiedProductSearchDetail
 		this.setErrorMessages(dto.getErrorMessages());
 		this.setWarningMessages(dto.getWarningMessages());
 		this.setRecordStatus(dto.getRecordStatus());
-		this.setTestingLabId(null);
 		this.setChplProductNumber(null);
 		this.setReportFileLocation(dto.getReportFileLocation());
 		this.setQualityManagementSystemAtt(null);
 		this.setAcbCertificationId(dto.getAcbCertificationId());
+		this.setIcs(dto.getIcs());
+		this.setSedTesting(dto.getSedTesting());
+		this.setQmsTesting(dto.getQmsTesting());
 		
 		Map<String, Object> classificationTypeMap = new HashMap<String, Object>();
 		if(dto.getProductClassificationId() == null) {
@@ -46,27 +50,27 @@ public class PendingCertifiedProductDetails extends CertifiedProductSearchDetail
 		this.setOtherAcb(null);
 		this.setCertificationStatus(null);
 		
-		Map<String, Object> vendorMap = new HashMap<String, Object>();
-		if(dto.getVendorId() == null) {
-			vendorMap.put("id", null);
+		Map<String, Object> developerMap = new HashMap<String, Object>();
+		if(dto.getDeveloperId() == null) {
+			developerMap.put("id", null);
 		} else {
-			vendorMap.put("id", dto.getVendorId());
+			developerMap.put("id", dto.getDeveloperId());
 		}
-		vendorMap.put("name", dto.getVendorName());
-		vendorMap.put("email", dto.getVendorEmail());
-		vendorMap.put("website", dto.getVendorWebsite());
-		this.setVendor(vendorMap);
+		developerMap.put("name", dto.getDeveloperName());
+		developerMap.put("email", dto.getDeveloperEmail());
+		developerMap.put("website", dto.getDeveloperWebsite());
+		this.setDeveloper(developerMap);
 		
-		vendorAddress = new HashMap<String, Object>();
-		if(dto.getVendorAddress() == null || dto.getVendorAddress().getId() == null) {
-			vendorAddress.put("id", null);
+		developerAddress = new HashMap<String, Object>();
+		if(dto.getDeveloperAddress() == null || dto.getDeveloperAddress().getId() == null) {
+			developerAddress.put("id", null);
 		} else {
-			vendorAddress.put("id", dto.getVendorAddress().getId());
+			developerAddress.put("id", dto.getDeveloperAddress().getId());
 		}
-		vendorAddress.put("line1", dto.getVendorStreetAddress());
-		vendorAddress.put("city", dto.getVendorCity());
-		vendorAddress.put("state", dto.getVendorState());
-		vendorAddress.put("zipcode", dto.getVendorZipCode());
+		developerAddress.put("line1", dto.getDeveloperStreetAddress());
+		developerAddress.put("city", dto.getDeveloperCity());
+		developerAddress.put("state", dto.getDeveloperState());
+		developerAddress.put("zipcode", dto.getDeveloperZipCode());
 		
 		Map<String, Object> productMap = new HashMap<String, Object>();
 		if(dto.getProductId() == null) {
@@ -117,13 +121,27 @@ public class PendingCertifiedProductDetails extends CertifiedProductSearchDetail
 		if(dto.getCertificationCriterion() == null) {
 			this.setCountCerts(0);
 		} else {
-			this.setCountCerts(dto.getCertificationCriterion().size());
+			int certCount = 0;
+			for(PendingCertificationCriterionDTO cert : dto.getCertificationCriterion()) {
+				if(cert.isMeetsCriteria()) {
+					certCount++;
+				}
+			}
+			this.setCountCerts(certCount);
 		}
 		
 		if(dto.getCqmCriterion() == null) {
 			this.setCountCqms(0);
 		} else {
-			this.setCountCqms(dto.getCqmCriterion().size());
+			int cqmCount = 0;
+			Set<String> cqmsMet = new HashSet<String>();
+			for(PendingCqmCriterionDTO cqm : dto.getCqmCriterion()) {
+				if(!cqmsMet.contains(cqm.getCmsId()) && cqm.isMeetsCriteria()) {
+					cqmsMet.add(cqm.getCmsId());
+					cqmCount++;
+				}
+			}
+			this.setCountCqms(cqmCount);
 		}
 		
 		this.setVisibleOnChpl(false);
@@ -135,7 +153,7 @@ public class PendingCertifiedProductDetails extends CertifiedProductSearchDetail
 		if(!StringUtils.isEmpty(dto.getAdditionalSoftware())) {
 			AdditionalSoftware software = new AdditionalSoftware();
 			if(dto.getAdditionalSoftwareId() != null) {
-				software.setAdditionalSoftwareid(dto.getAdditionalSoftwareId());
+				software.setAdditionalSoftwareId(dto.getAdditionalSoftwareId());
 			}
 			software.setName(dto.getAdditionalSoftware());
 			softwareList.add(software);
@@ -155,16 +173,31 @@ public class PendingCertifiedProductDetails extends CertifiedProductSearchDetail
 		//set cqm results
 		List<CQMResultDetails> cqmResults = new ArrayList<CQMResultDetails>();
 		for(PendingCqmCriterionDTO cqmCriterion : dto.getCqmCriterion()) {
-			CQMResultDetails cqm = new CQMResultDetails();
-			cqm.setCmsId(cqmCriterion.getCmsId());
-			cqm.setNqfNumber(cqmCriterion.getNqfNumber());
-			cqm.setNumber(cqmCriterion.getCqmNumber());
-			cqm.setSuccess(cqmCriterion.isMeetsCriteria());
-			cqm.setTitle(cqmCriterion.getTitle());
-			cqm.setVersion(cqmCriterion.getVersion());
-			cqm.setTypeId(cqmCriterion.getTypeId());
-			cqm.setDomain(cqmCriterion.getDomain());
-			cqmResults.add(cqm);
+			boolean existingCms = false;
+			if(!StringUtils.isEmpty(cqmCriterion.getCmsId())) {
+				for(CQMResultDetails result : cqmResults) {
+					if(dto.getCertificationEdition().equals("2014") && result.getCmsId().equals(cqmCriterion.getCmsId())) {
+						existingCms = true;
+						result.getSuccessVersions().add(cqmCriterion.getVersion());
+					}
+				}
+			}
+			
+			if(!existingCms) {
+				CQMResultDetails cqm = new CQMResultDetails();
+				cqm.setCmsId(cqmCriterion.getCmsId());
+				cqm.setNqfNumber(cqmCriterion.getNqfNumber());
+				cqm.setNumber(cqmCriterion.getCqmNumber());
+				cqm.setTitle(cqmCriterion.getTitle());
+				cqm.setTypeId(cqmCriterion.getTypeId());
+				cqm.setDomain(cqmCriterion.getDomain());
+				if(dto.getCertificationEdition().equals("2014") && !StringUtils.isEmpty(cqmCriterion.getCmsId())) {
+					cqm.getSuccessVersions().add(cqmCriterion.getVersion());
+				} else if(!StringUtils.isEmpty(cqmCriterion.getNqfNumber())) {
+					cqm.setSuccess(cqmCriterion.isMeetsCriteria());
+				}
+				cqmResults.add(cqm);
+			}
 		}
 		this.setCqmResults(cqmResults);
 	}
@@ -177,12 +210,12 @@ public class PendingCertifiedProductDetails extends CertifiedProductSearchDetail
 		this.uploadNotes = uploadNotes;
 	}
 
-	public Map<String, Object> getVendorAddress() {
-		return vendorAddress;
+	public Map<String, Object> getDeveloperAddress() {
+		return developerAddress;
 	}
 
-	public void setVendorAddress(Map<String, Object> vendorAddress) {
-		this.vendorAddress = vendorAddress;
+	public void setDeveloperAddress(Map<String, Object> developerAddress) {
+		this.developerAddress = developerAddress;
 	}
 
 	public String getRecordStatus() {

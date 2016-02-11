@@ -62,7 +62,14 @@ public class CertifiedProductSearchManagerImpl implements CertifiedProductSearch
 			searchResult.getCertifyingBody().put("id", dto.getCertificationBodyId());
 			searchResult.getCertifyingBody().put("name", dto.getCertificationBodyName());
 			
-			searchResult.setChplProductNumber(dto.getChplProductNumber());
+			if(dto.getYear().equals("2011") || dto.getYear().equals("2014")) {
+				searchResult.setChplProductNumber(dto.getChplProductNumber());
+			} else {
+				searchResult.setChplProductNumber(dto.getTestingLabCode() + "." + dto.getCertificationBodyCode() + "." + 
+					dto.getDeveloperCode() + "." + dto.getProductCode() + "." + dto.getVersionCode() + 
+					"." + dto.getIcsCode() + "." + dto.getAdditionalSoftwareCode() + 
+					"." + dto.getCertifiedDateCode());
+			}
 			
 			searchResult.getClassificationType().put("id", dto.getProductClassificationTypeId());
 			searchResult.getClassificationType().put("name", dto.getProductClassificationName());
@@ -77,17 +84,28 @@ public class CertifiedProductSearchManagerImpl implements CertifiedProductSearch
 			searchResult.getProduct().put("versionId",dto.getProductVersionId());
 			searchResult.getProduct().put("version", dto.getProductVersion());
 			
-			searchResult.setQualityManagementSystemAtt(dto.getQualityManagementSystemAtt());
 			searchResult.setReportFileLocation(dto.getReportFileLocation());
 			searchResult.setTestingLabId(dto.getTestingLabId());
+			searchResult.setTestingLabName(dto.getTestingLabName());
 			
-			searchResult.getVendor().put("id", dto.getVendorId());
-			searchResult.getVendor().put("name", dto.getVendorName());
+			searchResult.getDeveloper().put("id", dto.getDeveloperId());
+			searchResult.getDeveloper().put("name", dto.getDeveloperName());
 			
 			searchResult.setCountCerts(dto.getCountCertifications());
 			searchResult.setCountCqms(dto.getCountCqms());
+			searchResult.setCountCorrectiveActionPlans(dto.getCountCorrectiveActionPlans());
 			searchResult.setVisibleOnChpl(dto.getVisibleOnChpl());
 			searchResult.setPrivacyAttestation(dto.getPrivacyAttestation());
+			searchResult.setApiDocumentation(dto.getApiDocumentation());
+			searchResult.setIcs(dto.getIcs());
+			searchResult.setSedTesting(dto.getSedTesting());
+			searchResult.setQmsTesting(dto.getQmsTesting());
+			searchResult.setTermsOfUse(dto.getTermsOfUse());
+			if(dto.getTransparencyAttestation() == null) {
+				searchResult.setTransparencyAttestation(Boolean.FALSE);
+			} else {
+				searchResult.setTransparencyAttestation(dto.getTransparencyAttestation());
+			}
 			searchResults.add(searchResult);
 		}
 		
@@ -98,5 +116,4 @@ public class CertifiedProductSearchManagerImpl implements CertifiedProductSearch
 				);
 		return response;
 	}
-	
 }

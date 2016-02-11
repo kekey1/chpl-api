@@ -4,6 +4,7 @@ import java.util.Calendar;
 import java.util.GregorianCalendar;
 
 import gov.healthit.chpl.dao.EntityRetrievalException;
+import gov.healthit.chpl.domain.CQMResultDetails;
 import gov.healthit.chpl.domain.CertifiedProductSearchDetails;
 import gov.healthit.chpl.manager.CertifiedProductDetailsManager;
 import junit.framework.TestCase;
@@ -60,7 +61,6 @@ public class CertifiedProductDetailsManagerTest extends TestCase {
 		System.out.println(detail.getQualityManagementSystemAtt());
 		System.out.println(detail.getReportFileLocation());
 		System.out.println(detail.getAdditionalSoftware());
-		System.out.println(detail.getApplicableCqmCriteria());
 		System.out.println(detail.getCertificationEdition());
 		System.out.println(detail.getCertificationEvents());
 		System.out.println(detail.getCertificationResults());
@@ -72,8 +72,7 @@ public class CertifiedProductDetailsManagerTest extends TestCase {
 		System.out.println(detail.getId());
 		System.out.println(detail.getPracticeType());
 		System.out.println(detail.getProduct());
-		System.out.println(detail.getTestingLabId());
-		System.out.println(detail.getVendor());
+		System.out.println(detail.getDeveloper());
 		System.out.println(detail.getVisibleOnChpl());
 		
 	}
@@ -97,19 +96,7 @@ public class CertifiedProductDetailsManagerTest extends TestCase {
 	public void testCertifiedProductDetailsChplProductNumber() throws EntityRetrievalException{
 		
 		CertifiedProductSearchDetails detail = certifiedProductDetailsManager.getCertifiedProductDetails(1L);
-		
-		assertEquals("CHP-024050", detail.getChplProductNumber());
-		assertNotNull(detail.getApplicableCqmCriteria().get(0));
-		
-	}
-	
-	@Test
-	@Transactional
-	public void testCertifiedProductDetailApplicableCQMCriteria() throws EntityRetrievalException{
-		
-		CertifiedProductSearchDetails detail = certifiedProductDetailsManager.getCertifiedProductDetails(1L);	
-		assertNotNull(detail.getApplicableCqmCriteria().get(0));
-		
+		assertEquals("CHP-024050", detail.getChplProductNumber());		
 	}
 	
 	@Test
@@ -160,7 +147,26 @@ public class CertifiedProductDetailsManagerTest extends TestCase {
 	public void testCertifiedProductDetailsCQMResults() throws EntityRetrievalException{
 		
 		CertifiedProductSearchDetails detail = certifiedProductDetailsManager.getCertifiedProductDetails(1L);
-		assertEquals(3 ,detail.getCqmResults().size());
+		assertNotNull(detail.getCqmResults());
+		
+		int cqmSuccessCount = 0;
+		for(CQMResultDetails cqmDetail : detail.getCqmResults()) {
+			if(cqmDetail.isSuccess()) {
+				cqmSuccessCount++;
+			}
+		}
+		assertEquals(0 ,cqmSuccessCount);
+		
+		detail = certifiedProductDetailsManager.getCertifiedProductDetails(2L);
+		assertNotNull(detail.getCqmResults());
+		
+		cqmSuccessCount = 0;
+		for(CQMResultDetails cqmDetail : detail.getCqmResults()) {
+			if(cqmDetail.isSuccess()) {
+				cqmSuccessCount++;
+			}
+		}
+		assertEquals(2 ,cqmSuccessCount);
 	}
 	
 	@Test
@@ -196,10 +202,10 @@ public class CertifiedProductDetailsManagerTest extends TestCase {
 
 	@Test
 	@Transactional
-	public void testCertifiedProductDetailsVendor() throws EntityRetrievalException{
+	public void testCertifiedProductDetailsDeveloper() throws EntityRetrievalException{
 		
 		CertifiedProductSearchDetails detail = certifiedProductDetailsManager.getCertifiedProductDetails(1L);
-		assertEquals("Test Vendor 1", detail.getVendor().get("name"));
+		assertEquals("Test Developer 1", detail.getDeveloper().get("name"));
 		assertEquals(1, new Long(detail.getProduct().get("id").toString()).longValue());
 	}
 	
@@ -210,6 +216,20 @@ public class CertifiedProductDetailsManagerTest extends TestCase {
 		CertifiedProductSearchDetails detail = certifiedProductDetailsManager.getCertifiedProductDetails(1L);
 		assertTrue(detail.getVisibleOnChpl());
 	}
+
+	@Test
+	@Transactional
+	public void testCertifiedProductDetailsTransparencyAttestation() throws EntityRetrievalException{
+		CertifiedProductSearchDetails detail = certifiedProductDetailsManager.getCertifiedProductDetails(1L);
+		assertTrue(detail.getTransparencyAttestation());
+	}
 	
+	@Test
+	@Transactional
+	public void testCertifiedProductDetailsTransparencyAttestationFalse() throws EntityRetrievalException{
+		CertifiedProductSearchDetails detail = certifiedProductDetailsManager.getCertifiedProductDetails(4L);
+		assertFalse(detail.getTransparencyAttestation());
+	}
 }
+
 

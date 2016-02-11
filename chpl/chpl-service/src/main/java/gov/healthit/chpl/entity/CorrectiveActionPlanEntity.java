@@ -8,7 +8,6 @@ import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
-import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
 import javax.validation.constraints.NotNull;
 
@@ -17,33 +16,41 @@ import javax.validation.constraints.NotNull;
 public class CorrectiveActionPlanEntity {
 	
 	@Id 
-	@GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "correctiveActionPlanCorrective_action_plan_idGenerator")
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	@Basic( optional = false )
 	@Column( name = "corrective_action_plan_id", nullable = false  )
-	@SequenceGenerator(name = "correctiveActionPlanCorrective_action_plan_idGenerator", sequenceName = "corrective_action_plan_corrective_action_plan_id_seq", allocationSize = 1)
 	private Long id;
 	
 	@Basic( optional = false )
 	@Column(name="certified_product_id")
 	private Long certifiedProductId;
 	
+	@Basic( optional = false )
 	@Column(name="acb_summary")
 	private String acbSummaryDescription;
 	
+	@Basic( optional = false )
 	@Column(name = "developer_summary")
 	private String developerSummaryDescription;
 	
+	@Basic( optional = false )
 	@Column(name = "approval_date")
 	private Date approvalDate;
 	
+	@Basic( optional = false )
 	@Column(name = "effective_date")
 	private Date effectiveDate;
 	
+	@Basic( optional = false )
 	@Column(name = "completion_date_estimated")
 	private Date estimatedCompletionDate;
 	
 	@Column(name = "completion_date_actual")
 	private Date actualCompletionDate;
+	
+	@Basic( optional = false )
+	@Column(name = "noncompliance_determination_date")
+	private Date noncomplainceDeterminationDate;
 	
 	@Column(name = "resolution")
 	private String resolution;
@@ -168,6 +175,14 @@ public class CorrectiveActionPlanEntity {
 
 	public void setDeleted(Boolean deleted) {
 		this.deleted = deleted;
+	}
+
+	public Date getNoncomplainceDeterminationDate() {
+		return noncomplainceDeterminationDate;
+	}
+
+	public void setNoncomplainceDeterminationDate(Date noncomplainceDeterminationDate) {
+		this.noncomplainceDeterminationDate = noncomplainceDeterminationDate;
 	}
 
 }
