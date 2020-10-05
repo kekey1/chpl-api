@@ -9,6 +9,7 @@ import java.util.List;
 import org.junit.Test;
 import org.mockito.Mockito;
 
+import gov.healthit.chpl.certificationId.CertificationIdDAO;
 import gov.healthit.chpl.dto.CertificationIdDTO;
 import gov.healthit.chpl.exception.EntityCreationException;
 import gov.healthit.chpl.exception.EntityRetrievalException;

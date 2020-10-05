@@ -11,11 +11,11 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import gov.healthit.chpl.certificationId.CertificationIdManager;
 import gov.healthit.chpl.dao.CertifiedProductSearchDAO;
 import gov.healthit.chpl.domain.KeyValueModelStatuses;
 import gov.healthit.chpl.domain.SimpleCertificationId;
 import gov.healthit.chpl.domain.search.CertifiedProductFlatSearchResult;
-import gov.healthit.chpl.manager.CertificationIdManager;
 import gov.healthit.chpl.manager.CacheableDimensionalDataManager;
 
 @Component

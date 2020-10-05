@@ -3,7 +3,7 @@ package gov.healthit.chpl.dto;
 import java.io.Serializable;
 import java.util.Date;
 
-import gov.healthit.chpl.entity.CertificationIdEntity;
+import gov.healthit.chpl.certificationId.CertificationIdEntity;
 import gov.healthit.chpl.util.Util;
 import lombok.AllArgsConstructor;
 import lombok.Builder;

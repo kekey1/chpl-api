@@ -5,7 +5,7 @@ import java.util.Date;
 
 import org.springframework.util.StringUtils;
 
-import gov.healthit.chpl.entity.CertificationIdAndCertifiedProductEntity;
+import gov.healthit.chpl.certificationId.CertificationIdAndCertifiedProductEntity;
 import gov.healthit.chpl.util.Util;
 
 public class CertificationIdAndCertifiedProductDTO implements Serializable {

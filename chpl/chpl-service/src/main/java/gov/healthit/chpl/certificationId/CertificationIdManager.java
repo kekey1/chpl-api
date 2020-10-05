@@ -1,9 +1,12 @@
-package gov.healthit.chpl.manager;
+package gov.healthit.chpl.certificationId;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
@@ -15,7 +18,6 @@ import org.springframework.util.StringUtils;
 import com.fasterxml.jackson.core.JsonProcessingException;
 
 import gov.healthit.chpl.caching.CacheNames;
-import gov.healthit.chpl.dao.CertificationIdDAO;
 import gov.healthit.chpl.domain.SimpleCertificationId;
 import gov.healthit.chpl.domain.SimpleCertificationIdWithProducts;
 import gov.healthit.chpl.domain.activity.ActivityConcept;
@@ -25,6 +27,7 @@ import gov.healthit.chpl.dto.CertificationIdAndCertifiedProductDTO;
 import gov.healthit.chpl.dto.CertificationIdDTO;
 import gov.healthit.chpl.exception.EntityCreationException;
 import gov.healthit.chpl.exception.EntityRetrievalException;
+import gov.healthit.chpl.manager.ActivityManager;
 
 @Service
 public class CertificationIdManager {
@@ -137,5 +140,62 @@ public class CertificationIdManager {
         activityManager.addActivity(ActivityConcept.CERTIFICATION_ID, result.getId(), activityMsg, null,
                 result);
         return result;
+    }
+
+    public Map<String, Integer> getCqmsMet(List<CQMMetDTO> cqmDtos) {
+        Map<String, Integer> cqmsMet = new HashMap<String, Integer>(100);
+        if (cqmDtos != null) {
+            cqmsMet = new HashMap<String, Integer>(cqmDtos.size());
+            for (CQMMetDTO cqmDetail : cqmDtos) {
+                // See what version we've already met...
+                Integer verMet = cqmsMet.get(cqmDetail.getCmsId());
+                if (null == verMet) {
+                    verMet = Integer.valueOf(0);
+                }
+
+                // ...store the version that's higher.
+                Integer ver = Integer.parseInt(cqmDetail.getVersion().substring(1));
+                if (ver > verMet) {
+                    cqmsMet.put(cqmDetail.getCmsId(), ver);
+                }
+            }
+        }
+        return cqmsMet;
+    }
+
+    public void collectMetData(List<CertificationCriterionDTO> certDtos, List<CQMMetDTO> cqmDtos, List<Integer> years) {
+        Map<CertificationCriterionDTO, Integer> criteriaMet = new HashMap<CertificationCriterionDTO, Integer>(100);
+        Map<String, Integer> cqmsMet = new HashMap<String, Integer>(100);
+        SortedSet<Integer> editionYears = new TreeSet<Integer>();
+
+        // Collect the certification years
+        editionYears.addAll(years);
+
+        // Collect criteria met
+        if (null != certDtos) {
+            criteriaMet = new HashMap<CertificationCriterionDTO, Integer>(certDtos.size());
+            for (CertificationCriterionDTO certDetail : certDtos) {
+                criteriaMet.put(certDetail, 1);
+            }
+        }
+
+        // Collect cqms and domains met
+        if (null != cqmDtos) {
+            cqmsMet = new HashMap<String, Integer>(cqmDtos.size());
+            for (CQMMetDTO cqmDetail : cqmDtos) {
+                // See what version we've already met...
+                Integer verMet = cqmsMet.get(cqmDetail.getCmsId());
+                if (null == verMet) {
+                    verMet = Integer.valueOf(0);
+                }
+
+                // ...store the version that's higher.
+                Integer ver = Integer.parseInt(cqmDetail.getVersion().substring(1));
+                if (ver > verMet) {
+                    cqmsMet.put(cqmDetail.getCmsId(), ver);
+                }
+            }
+        }
+
     }
 }

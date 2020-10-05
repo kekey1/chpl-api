@@ -1,4 +1,4 @@
-package gov.healthit.chpl.web.controller.results;
+package gov.healthit.chpl.certificationId;
 
 import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
@@ -15,7 +15,7 @@ import lombok.Data;
 import lombok.Singular;
 
 @Data
-public class CertificationIdLookupResults implements Serializable {
+public class CertificationId implements Serializable {
     private static final long serialVersionUID = 494982326653301352L;
 
     @Singular

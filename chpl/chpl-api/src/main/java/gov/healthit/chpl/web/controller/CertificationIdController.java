@@ -2,6 +2,7 @@ package gov.healthit.chpl.web.controller;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.SortedSet;
@@ -20,8 +21,10 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 
+import gov.healthit.chpl.certificationId.CertificationId;
+import gov.healthit.chpl.certificationId.CertificationIdManager;
 import gov.healthit.chpl.certificationId.Validator;
-import gov.healthit.chpl.certificationId.ValidatorFactory;
+import gov.healthit.chpl.certificationId.Validator2015;
 import gov.healthit.chpl.domain.SimpleCertificationId;
 import gov.healthit.chpl.dto.CQMMetDTO;
 import gov.healthit.chpl.dto.CertificationCriterionDTO;
@@ -31,12 +34,10 @@ import gov.healthit.chpl.exception.CertificationIdException;
 import gov.healthit.chpl.exception.EntityCreationException;
 import gov.healthit.chpl.exception.EntityRetrievalException;
 import gov.healthit.chpl.exception.InvalidArgumentsException;
-import gov.healthit.chpl.manager.CertificationIdManager;
 import gov.healthit.chpl.manager.CertifiedProductManager;
 import gov.healthit.chpl.permissions.ResourcePermissions;
-import gov.healthit.chpl.web.controller.results.CertificationIdLookupResults;
-import gov.healthit.chpl.web.controller.results.CertificationIdResults;
-import gov.healthit.chpl.web.controller.results.CertificationIdVerifyResults;
+import gov.healthit.chpl.web.controller.results.CertificationIdValidationResponse;
+import gov.healthit.chpl.web.controller.results.CertificationIdVerifyResponse;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 
@@ -48,16 +49,16 @@ public class CertificationIdController {
     private CertifiedProductManager certifiedProductManager;
     private CertificationIdManager certificationIdManager;
     private ResourcePermissions resourcePermissions;
-    private ValidatorFactory validatorFactory;
+    private Validator2015 certIdValidator;
 
     @Autowired
     public CertificationIdController(CertifiedProductManager certifiedProductManager,
-            CertificationIdManager certificationIdManager, ValidatorFactory validatorFactory,
+            CertificationIdManager certificationIdManager, Validator2015 certIdValidator,
             ResourcePermissions resourcePermissions) {
         this.certifiedProductManager = certifiedProductManager;
         this.certificationIdManager = certificationIdManager;
         this.resourcePermissions = resourcePermissions;
-        this.validatorFactory = validatorFactory;
+        this.certIdValidator = certIdValidator;
     }
 
     // **********************************************************************************************************
@@ -99,7 +100,7 @@ public class CertificationIdController {
     @RequestMapping(value = "/search", method = RequestMethod.GET, produces = {
             MediaType.APPLICATION_JSON_VALUE
     })
-    public @ResponseBody CertificationIdResults searchCertificationId(
+    public @ResponseBody CertificationIdValidationResponse searchCertificationId(
             @RequestParam(required = false) final List<Long> ids) throws InvalidArgumentsException,
     CertificationIdException {
         return this.findCertificationByProductIds(ids, false);
@@ -114,13 +115,13 @@ public class CertificationIdController {
     @RequestMapping(value = "", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE, produces = {
             MediaType.APPLICATION_JSON_VALUE
     })
-    public @ResponseBody CertificationIdResults createCertificationId(
+    public @ResponseBody CertificationIdValidationResponse createCertificationId(
             @RequestParam(required = true) final List<Long> ids) throws InvalidArgumentsException,
     CertificationIdException {
         return create(ids);
     }
 
-    private CertificationIdResults create(final List<Long> ids) throws InvalidArgumentsException,
+    private CertificationIdValidationResponse create(final List<Long> ids) throws InvalidArgumentsException,
     CertificationIdException {
         return this.findCertificationByProductIds(ids, true);
     }
@@ -147,7 +148,7 @@ public class CertificationIdController {
     @RequestMapping(value = "/{certificationId}", method = RequestMethod.GET, produces = {
             MediaType.APPLICATION_JSON_VALUE
     })
-    public @ResponseBody CertificationIdLookupResults getCertificationId(
+    public @ResponseBody CertificationId getCertificationId(
             @PathVariable("certificationId") final String certificationId, @RequestParam(required = false,
             defaultValue = "false") final Boolean includeCriteria, @RequestParam(required = false,
             defaultValue = "false") final Boolean includeCqms) throws InvalidArgumentsException,
@@ -168,7 +169,7 @@ public class CertificationIdController {
     produces = {
             MediaType.APPLICATION_JSON_VALUE
     })
-    public @ResponseBody CertificationIdVerifyResults verifyCertificationId(
+    public @ResponseBody CertificationIdVerifyResponse verifyCertificationId(
             @RequestBody final CertificationIdVerificationBody body) throws InvalidArgumentsException,
     CertificationIdException {
         return this.verifyCertificationIds(body.getIds());
@@ -186,7 +187,7 @@ public class CertificationIdController {
     @RequestMapping(value = "/verify", method = RequestMethod.GET, produces = {
             MediaType.APPLICATION_JSON_VALUE
     })
-    public @ResponseBody CertificationIdVerifyResults verifyCertificationId(
+    public @ResponseBody CertificationIdVerifyResponse verifyCertificationId(
             @RequestParam("ids") final List<String> certificationIds) throws InvalidArgumentsException,
     CertificationIdException {
         return this.verifyCertificationIds(certificationIds);
@@ -196,10 +197,10 @@ public class CertificationIdController {
     // findCertificationIdByCertificationId
     //
     // **********************************************************************************************************
-    private CertificationIdLookupResults findCertificationIdByCertificationId(final String certificationId,
+    private CertificationId findCertificationIdByCertificationId(final String certificationId,
             final Boolean includeCriteria, final Boolean includeCqms) throws InvalidArgumentsException,
     EntityRetrievalException, CertificationIdException {
-        CertificationIdLookupResults results = new CertificationIdLookupResults();
+        CertificationId results = new CertificationId();
         try {
             // Lookup the Cert ID
             CertificationIdDTO certDto = certificationIdManager.getByCertificationId(certificationId);
@@ -215,35 +216,29 @@ public class CertificationIdController {
                 List<Long> certProductIds = new ArrayList<Long>();
 
                 // Add product data to results
-                List<CertificationIdLookupResults.Product> productList = results.getProducts();
+                List<CertificationId.Product> productList = results.getProducts();
                 for (CertifiedProductDetailsDTO dto : productDtos) {
-                    productList.add(new CertificationIdLookupResults.Product(dto));
+                    productList.add(new CertificationId.Product(dto));
                     yearSet.add(Integer.valueOf(dto.getYear()));
                     certProductIds.add(dto.getId());
                 }
 
                 // Add criteria and cqms met to results
                 if (includeCriteria || includeCqms) {
-                    Validator validator = this.validatorFactory.getValidator(certDto.getYear());
-
-                    // Lookup Criteria for Validating
                     List<CertificationCriterionDTO> criteriaDtos = certificationIdManager
                             .getCriteriaMetByCertifiedProductIds(certProductIds);
-
-                    // Lookup CQMs for Validating
                     List<CQMMetDTO> cqmDtos = certificationIdManager.getCqmsMetByCertifiedProductIds(certProductIds);
 
-                    boolean isValid = validator.validate(criteriaDtos, cqmDtos, new ArrayList<Integer>(yearSet));
+                    boolean isValid = certIdValidator.validate(criteriaDtos, cqmDtos, new ArrayList<Integer>(yearSet));
                     if (isValid) {
                         if (includeCriteria) {
-                            results.setCriteria(validator.getCriteriaMet().keySet());
+                            results.setCriteria(new HashSet<CertificationCriterionDTO>(criteriaDtos));
                         }
                         if (includeCqms) {
-                            results.setCqms(validator.getCqmsMet().keySet());
+                            results.setCqms(certificationIdManager.getCqmsMet(cqmDtos).keySet());
                         }
                     }
                 }
-
             }
 
         } catch (final EntityRetrievalException ex) {
@@ -257,10 +252,10 @@ public class CertificationIdController {
     // verifyCertificationIds
     //
     // **********************************************************************************************************
-    private CertificationIdVerifyResults verifyCertificationIds(final List<String> certificationIds)
+    private CertificationIdVerifyResponse verifyCertificationIds(final List<String> certificationIds)
             throws InvalidArgumentsException, CertificationIdException {
 
-        CertificationIdVerifyResults results = new CertificationIdVerifyResults();
+        CertificationIdVerifyResponse results = new CertificationIdVerifyResponse();
         if (null != certificationIds) {
 
             try {
@@ -268,7 +263,7 @@ public class CertificationIdController {
 
                 // Put the IDs in the order that they were passed in
                 for (String id : certificationIds) {
-                    results.getResults().add(new CertificationIdVerifyResults.VerifyResult(id, lookupResults.get(id)));
+                    results.getResults().add(new CertificationIdVerifyResponse.VerifyResult(id, lookupResults.get(id)));
                 }
 
             } catch (final EntityRetrievalException e) {
@@ -287,7 +282,7 @@ public class CertificationIdController {
     // findCertificationByProductIds
     //
     // **********************************************************************************************************
-    private CertificationIdResults findCertificationByProductIds(
+    private CertificationIdValidationResponse findCertificationByProductIds(
             final List<Long> productIdListIncoming, final Boolean create)
                     throws InvalidArgumentsException, CertificationIdException {
         List<Long> productIdList;
@@ -305,14 +300,14 @@ public class CertificationIdController {
         }
 
         // Add products to results
-        CertificationIdResults results = new CertificationIdResults();
+        CertificationIdValidationResponse results = new CertificationIdValidationResponse();
         SortedSet<Integer> yearSet = new TreeSet<Integer>();
-        List<CertificationIdResults.Product> resultProducts = new ArrayList<CertificationIdResults.Product>();
+        List<CertificationIdValidationResponse.Product> resultProducts = new ArrayList<CertificationIdValidationResponse.Product>();
         for (CertifiedProductDetailsDTO dto : productDtos) {
             if (create && !dto.getYear().equalsIgnoreCase("2015")) {
                 throw new CertificationIdException("New Certification IDs can only be created using 2015 Edition Listings");
             }
-            CertificationIdResults.Product p = new CertificationIdResults.Product(dto);
+            CertificationIdValidationResponse.Product p = new CertificationIdValidationResponse.Product(dto);
             resultProducts.add(p);
             yearSet.add(Integer.valueOf(dto.getYear()));
         }
@@ -320,24 +315,21 @@ public class CertificationIdController {
         String year = Validator.calculateAttestationYear(yearSet);
         results.setYear(year);
 
-        // Validate the collection
-        Validator validator = this.validatorFactory.getValidator(year);
-
         // Lookup Criteria for Validating
         List<CertificationCriterionDTO> criteriaDtos = certificationIdManager.getCriteriaMetByCertifiedProductIds(productIdList);
 
         // Lookup CQMs for Validating
         List<CQMMetDTO> cqmDtos = certificationIdManager.getCqmsMetByCertifiedProductIds(productIdList);
 
-        boolean isValid = validator.validate(criteriaDtos, cqmDtos, new ArrayList<Integer>(yearSet));
+        boolean isValid = certIdValidator.validate(criteriaDtos, cqmDtos, new ArrayList<Integer>(yearSet));
         results.setIsValid(isValid);
-        results.setMetPercentages(validator.getPercents());
-        results.setMetCounts(validator.getCounts());
-        results.setMissingOr(validator.getMissingOr());
-        results.setMissingAnd(validator.getMissingAnd());
+        results.setMetPercentages(certIdValidator.getPercents());
+        results.setMetCounts(certIdValidator.getCounts());
+        results.setMissingOr(certIdValidator.getMissingOr());
+        results.setMissingAnd(certIdValidator.getMissingAnd());
 
         // Lookup CERT ID
-        if (validator.isValid()) {
+        if (certIdValidator.isValid()) {
             CertificationIdDTO idDto = null;
             try {
                 idDto = certificationIdManager.getByProductIds(productIdList, year);

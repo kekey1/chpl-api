@@ -1,4 +1,4 @@
-package gov.healthit.chpl.entity;
+package gov.healthit.chpl.certificationId;
 
 import java.io.Serializable;
 import java.util.Date;
@@ -13,13 +13,6 @@ import javax.persistence.Table;
 import javax.persistence.Transient;
 
 import gov.healthit.chpl.util.Util;
-
-/**
- * Object mapping for hibernate-handled table: product. Table to store products
- * that are submitted for developers
- *
- * @author
- */
 
 @Entity
 @Table(name = "ehr_certification_id")
