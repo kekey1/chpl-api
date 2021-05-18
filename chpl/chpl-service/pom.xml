@@ -400,6 +400,12 @@
             <artifactId>jfreechart</artifactId>
             <version>1.5.2</version>
         </dependency>
+
+        <dependency>
+            <groupId>org.mongodb</groupId>
+            <artifactId>mongodb-driver-sync</artifactId>
+            <version>4.2.3</version>
+        </dependency>
     </dependencies>
 
     <build>

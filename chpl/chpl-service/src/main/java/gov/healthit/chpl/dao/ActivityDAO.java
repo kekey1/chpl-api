@@ -10,6 +10,7 @@ import javax.persistence.Query;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import gov.healthit.chpl.dao.impl.BaseDAOImpl;
 import gov.healthit.chpl.domain.activity.ActivityConcept;
@@ -89,7 +90,7 @@ public class ActivityDAO extends BaseDAOImpl {
         return dto;
     }
 
-
+    @Transactional
     public List<ActivityDTO> findByObjectId(final Long objectId, final ActivityConcept concept,
             final Date startDate, final Date endDate) {
 

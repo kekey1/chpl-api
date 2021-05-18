@@ -10,6 +10,10 @@
         additivity="false">
         <AppenderRef ref="loggable" />
     </Logger>
+    <Logger name="mongoActivityWriterJobLogger" level="INFO"
+        additivity="false">
+        <AppenderRef ref="mongoActivityWriterJob" />
+    </Logger>
     <Logger name="summaryStatisticsEmailJobLogger" level="INFO"
         additivity="false">
         <AppenderRef ref="summaryStatisticsEmailJob" />

@@ -23,6 +23,14 @@
             <durability>true</durability>
             <recover>false</recover>
         </job>
+        <job>
+            <name>mongoActivityWriterJob</name>
+            <group>systemJobs</group>
+            <description>Write out existing listing activity to a Mongo instance</description>
+            <job-class>gov.healthit.chpl.scheduler.job.activity.MongoActivityWriter</job-class>
+            <durability>true</durability>
+            <recover>false</recover>
+        </job>
         <!-- Download file generation: 2015, 2014, 2011 -->
         <job>
             <name>downloadFileJob2015</name>
