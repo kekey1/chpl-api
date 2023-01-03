@@ -14,7 +14,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import gov.healthit.chpl.dao.MacraMeasureDAO;
 import gov.healthit.chpl.domain.CertificationCriterion;
 import gov.healthit.chpl.domain.CertifiedProductSearchDetails;
 import gov.healthit.chpl.domain.ListingMeasure;
@@ -28,7 +27,6 @@ import lombok.extern.log4j.Log4j2;
 @Component
 @Log4j2
 public class MeasureNormalizer {
-    private MacraMeasureDAO legacyMacraMeasureDao;
     private MeasureDAO measureDao;
     private ListingMeasureDAO listingMeasureDao;
     private CertificationCriterionService criteriaService;
@@ -36,11 +34,9 @@ public class MeasureNormalizer {
     private Set<MeasureType> measureTypes;
 
     @Autowired
-    public MeasureNormalizer(MacraMeasureDAO legacyMacraMeasureDao,
-            MeasureDAO measureDao,
+    public MeasureNormalizer(MeasureDAO measureDao,
             ListingMeasureDAO listingMeasureDao,
             CertificationCriterionService criteriaService) {
-        this.legacyMacraMeasureDao = legacyMacraMeasureDao;
         this.measureDao = measureDao;
         this.listingMeasureDao = listingMeasureDao;
         this.criteriaService = criteriaService;
