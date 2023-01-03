@@ -56,17 +56,11 @@ public class MeasureNormalizer {
             listing.getMeasures().stream()
                 .forEach(listingMeasure -> populateMeasureType(listingMeasure));
             listing.getMeasures().stream()
-                .filter(listingMeasure -> listingMeasure.getMeasure() != null
-                    && StringUtils.isEmpty(listingMeasure.getMeasure().getLegacyMacraMeasureValue()))
+                .filter(listingMeasure -> listingMeasure.getMeasure() != null)
                 .forEach(listingMeasure -> {
                     populateMeasureWithMipsValues(listingMeasure);
                     populateAssociatedCriteriaFields(listingMeasure);
                 });
-            //if we ever get rid of legacy macra measures we can remove this
-            listing.getMeasures().stream()
-                .filter(listingMeasure -> listingMeasure.getMeasure() != null
-                    && !StringUtils.isEmpty(listingMeasure.getMeasure().getLegacyMacraMeasureValue()))
-                .forEach(listingMeasure -> populateMeasureWithLegacyValues(listingMeasure));
 
             List<ListingMeasure> combinedListingMeasures = new ArrayList<ListingMeasure>();
             combineListingMeasures(combinedListingMeasures, listing.getMeasures());
@@ -125,31 +119,6 @@ public class MeasureNormalizer {
             criterion.setDescription(matchingCriterion.getDescription());
             criterion.setRemoved(matchingCriterion.getRemoved());
             criterion.setTitle(matchingCriterion.getTitle());
-        }
-    }
-
-    private void populateMeasureWithLegacyValues(ListingMeasure listingMeasure) {
-        if (listingMeasure.getMeasure() != null
-                && listingMeasure.getMeasure().getId() == null
-                && !StringUtils.isEmpty(listingMeasure.getMeasure().getLegacyMacraMeasureValue())
-                && listingMeasure.getAssociatedCriteria() != null
-                && listingMeasure.getAssociatedCriteria().size() > 0) {
-            //there should only be one associated criterion per measure at this point
-            //when it's just been parsed with the criteria-level upload handler
-            CertificationCriterion associatedCriterion = listingMeasure.getAssociatedCriteria().iterator().next();
-            if (associatedCriterion.getId() != null) {
-                Long macraMeasureId = legacyMacraMeasureDao.getMacraMeasureIdByCriterionAndValue(
-                        associatedCriterion.getId(),
-                        listingMeasure.getMeasure().getLegacyMacraMeasureValue());
-                if (macraMeasureId != null) {
-                    Measure mappedMeasure = measureDao.getMeasureByMacraMeasureId(macraMeasureId);
-                    if (mappedMeasure != null) {
-                        listingMeasure.setMeasure(mappedMeasure);
-                    }
-                }
-            } else {
-                LOGGER.warn("There was no criterion ID found for criterion " + associatedCriterion.getNumber() + " so the legacy Macra Measure cannot be mapped.");
-            }
         }
     }
 
@@ -219,12 +188,6 @@ public class MeasureNormalizer {
                 listingMeasure1.getMeasureType(), listingMeasure2.getMeasureType(),
                 listingMeasure1.getMeasureType().getId(), listingMeasure2.getMeasureType().getId())) {
             return listingMeasure1.getMeasure().getId().equals(listingMeasure2.getMeasure().getId())
-                    && listingMeasure1.getMeasureType().getId().equals(listingMeasure2.getMeasureType().getId());
-        } else if (ObjectUtils.allNotNull(listingMeasure1.getMeasure(), listingMeasure2.getMeasure(),
-                listingMeasure1.getMeasureType(), listingMeasure2.getMeasureType(),
-                listingMeasure1.getMeasureType().getId(), listingMeasure2.getMeasureType().getId(),
-                listingMeasure1.getMeasure().getLegacyMacraMeasureValue(), listingMeasure2.getMeasure().getLegacyMacraMeasureValue())) {
-            return listingMeasure1.getMeasure().getLegacyMacraMeasureValue().equals(listingMeasure2.getMeasure().getLegacyMacraMeasureValue())
                     && listingMeasure1.getMeasureType().getId().equals(listingMeasure2.getMeasureType().getId());
         }
         return false;
