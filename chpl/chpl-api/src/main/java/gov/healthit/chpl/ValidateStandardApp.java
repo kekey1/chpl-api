@@ -48,14 +48,6 @@ public class ValidateStandardApp {
             }
         }
 
-//        for (CertificationCriterion criterion : standardRequirements.keySet()) {
-//            for (Standard standard : standardRequirements.get(criterion)) {
-//                reviewListingsHaveStandardOnExpectedCriterion(listings, criterion, standard);
-//                //TODO: review standard isn't on any other criteria
-//            }
-//        }
-
-
         System.out.println("Loading listings from " + inactiveCertificateFile);
         jParser = jsonFactory.createParser(new File(inactiveCertificateFile)); // or URL, Stream, Reader, String, byte[]
         listings = objectMapper.readValue(jParser, new TypeReference<List<CertifiedProductSearchDetails>>() { });
@@ -63,28 +55,6 @@ public class ValidateStandardApp {
         for (CertifiedProductSearchDetails listing : listings) {
             for (CertificationResult certResult : listing.getCertificationResults()) {
                 reviewCertificationResultHasCorrectStandards(listing, certResult);
-            }
-        }
-
-//        for (CertificationCriterion criterion : standardRequirements.keySet()) {
-//            for (Standard standard : standardRequirements.get(criterion)) {
-//                reviewListingsHaveStandardOnExpectedCriterion(listings, criterion, standard);
-//                //TODO: review standard isn't on any other criteria
-//            }
-//        }
-    }
-
-    private static void reviewListingsHaveStandardOnExpectedCriterion(
-            List<CertifiedProductSearchDetails> listings, CertificationCriterion criterion, Standard standard) {
-        for (CertifiedProductSearchDetails listing : listings) {
-            CertificationResult attestedCriterion = getCertResult(listing, criterion);
-            if (attestedCriterion != null) {
-                if (!certResultContainsStandard(attestedCriterion, standard)
-                        && listingInactiveDateIsBeforeStandardEndDate(listing.getDecertificationDay(), standard)
-                        && listingCertDateIsBeforeStandardEndDate(listing.getCertificationDay(), standard)) {
-                    System.out.println("Standard " + standard.getRegulatoryTextCitation() + " not found for criterion ID " + criterion.getId() + " in listing "
-                            + listing.getChplProductNumber());
-                }
             }
         }
     }
@@ -286,20 +256,6 @@ public class ValidateStandardApp {
                         + listing.getChplProductNumber() + ". The standard was expected.");
             }
         }
-    }
-
-    private static CertificationResult getCertResult(CertifiedProductSearchDetails listing, CertificationCriterion criterion) {
-        if (listing.getCertificationResults() != null && listing.getCertificationResults().size() > 0) {
-            Optional<CertificationResult> attestedCertResult = listing.getCertificationResults().stream()
-                .filter(certResult -> certResult.getCriterion().getId().equals(criterion.getId()))
-                .filter(certResult -> certResult.getSuccess().equals(Boolean.TRUE))
-                .findAny();
-            if (attestedCertResult.isEmpty()) {
-                return null;
-            }
-            return attestedCertResult.get();
-        }
-        return null;
     }
 
     private static boolean certResultContainsStandard(CertificationResult certResult, Standard standard) {
