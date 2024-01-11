@@ -25,8 +25,8 @@ import gov.healthit.chpl.standard.Standard;
 
 public class ValidateStandardApp {
 
-    private static String activeCertificateFile = "C://CHPL//chpl-active-20240110_164729.json";
-    private static String inactiveCertificateFile = "C://CHPL//chpl-inactive-20240110_171024.json";
+    private static String activeCertificateFile = "C://CHPL//chpl-active-20240111_065450.json";
+    private static String inactiveCertificateFile = "C://CHPL//chpl-inactive-20240111_072758.json";
 
     private static Map<CertificationCriterion, List<Standard>> standardRequirements;
 
