@@ -25,8 +25,8 @@ import gov.healthit.chpl.standard.Standard;
 
 public class ValidateStandardApp {
 
-    private static String activeCertificateFile = "C://CHPL//chpl-active-20240111_065450.json";
-    private static String inactiveCertificateFile = "C://CHPL//chpl-inactive-20240111_072758.json";
+    private static String activeCertificateFile = "C://CHPL//files//chpl-active-20240131_065458.json";
+    private static String inactiveCertificateFile = "C://CHPL//files//chpl-inactive-20240131_072722.json";
 
     private static Map<CertificationCriterion, List<Standard>> standardRequirements;
 
@@ -92,9 +92,9 @@ public class ValidateStandardApp {
         standardRequirements.put(CertificationCriterion.builder().id(26L).build(),
                 Stream.of(Standard.builder().regulatoryTextCitation("170.205(h)(2)").build()).toList());
         standardRequirements.put(CertificationCriterion.builder().id(27L).build(),
-                Stream.of(Standard.builder().regulatoryTextCitation("170.205(h)(2)").build(),
-                        Standard.builder().regulatoryTextCitation("170.205(k)(1)").build(),
-                        Standard.builder().regulatoryTextCitation("170.205(k)(2)").build()).toList());
+                Stream.of(Standard.builder().regulatoryTextCitation("170.205(h)(2) for (c)(3)").endDay(LocalDate.parse("2022-12-31")).build(),
+                        Standard.builder().regulatoryTextCitation("170.205(k)(1) for (c)(3)").endDay(LocalDate.parse("2022-12-31")).build(),
+                        Standard.builder().regulatoryTextCitation("170.205(k)(2) for (c)(3)").endDay(LocalDate.parse("2022-12-31")).build()).toList());
         standardRequirements.put(CertificationCriterion.builder().id(28L).build(),
                 Stream.of(Standard.builder().regulatoryTextCitation("170.205(h)(2)").build(),
                         Standard.builder().regulatoryTextCitation("170.205(k)(1)").build(),
@@ -175,10 +175,10 @@ public class ValidateStandardApp {
                 Stream.of(Standard.builder().regulatoryTextCitation("170.205(a)(4)").build(),
                         Standard.builder().regulatoryTextCitation("170.205(a)(5)").build()).toList());
         standardRequirements.put(CertificationCriterion.builder().id(172L).build(),
-                Stream.of(Standard.builder().regulatoryTextCitation("170.205(h)(2)-Cures").endDay(LocalDate.parse("2022-12-31")).build(),
+                Stream.of(Standard.builder().regulatoryTextCitation("170.205(h)(2) for (c)(3)").endDay(LocalDate.parse("2022-12-31")).build(),
                         Standard.builder().regulatoryTextCitation("170.205(h)(3)").build(),
-                        Standard.builder().regulatoryTextCitation("170.205(k)(1)-Cures").endDay(LocalDate.parse("2022-12-31")).build(),
-                        Standard.builder().regulatoryTextCitation("170.205(k)(2)-Cures").endDay(LocalDate.parse("2022-12-31")).build(),
+                        Standard.builder().regulatoryTextCitation("170.205(k)(1) for (c)(3)").endDay(LocalDate.parse("2022-12-31")).build(),
+                        Standard.builder().regulatoryTextCitation("170.205(k)(2) for (c)(3)").endDay(LocalDate.parse("2022-12-31")).build(),
                         Standard.builder().regulatoryTextCitation("170.205(k)(3)").build()).toList());
         standardRequirements.put(CertificationCriterion.builder().id(173L).build(),
                 Stream.of(Standard.builder().regulatoryTextCitation("170.210(e)(1)").build(),
@@ -247,10 +247,19 @@ public class ValidateStandardApp {
         }
 
         //check that every expected standard is contained on the attested criterion
+//        for (Standard expectedStandard : expectedStandards) {
+//            if (!certResultContainsStandard(certResult, expectedStandard)
+//                    && listingInactiveDateIsBeforeStandardEndDate(listing.getDecertificationDay(), expectedStandard)
+//                    && listingCertDateIsBeforeStandardEndDate(listing.getCertificationDay(), expectedStandard)) {
+//                System.out.println("Standard " + expectedStandard.getRegulatoryTextCitation()
+//                        + " was not found on criterion  " + criterion.getId() + " in listing "
+//                        + listing.getChplProductNumber() + ". The standard was expected.");
+//            }
+//        }
+
         for (Standard expectedStandard : expectedStandards) {
             if (!certResultContainsStandard(certResult, expectedStandard)
-                    && listingInactiveDateIsBeforeStandardEndDate(listing.getDecertificationDay(), expectedStandard)
-                    && listingCertDateIsBeforeStandardEndDate(listing.getCertificationDay(), expectedStandard)) {
+                    && (expectedStandard.getEndDay() == null || expectedStandard.getEndDay().isAfter(LocalDate.now()))) {
                 System.out.println("Standard " + expectedStandard.getRegulatoryTextCitation()
                         + " was not found on criterion  " + criterion.getId() + " in listing "
                         + listing.getChplProductNumber() + ". The standard was expected.");
