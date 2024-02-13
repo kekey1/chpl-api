@@ -27,6 +27,9 @@
             additivity="false">
             <AppenderRef ref="STDOUT" />
         </Logger>
+        <Logger name="org.springframework.data" level="TRACE" additivity="false">
+            <AppenderRef ref="STDOUT" />
+        </Logger>
         <Logger name="org.springdoc" level="WARN"
             additivity="false">
             <AppenderRef ref="STDOUT" />

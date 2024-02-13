@@ -15,6 +15,10 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.collections.api.set.sorted.ImmutableSortedSet;
 import org.eclipse.collections.impl.factory.SortedSets;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.Transient;
+import org.springframework.data.elasticsearch.annotations.Document;
+import org.springframework.data.elasticsearch.annotations.WriteOnlyProperty;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -41,6 +45,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.Singular;
 
+@Document(indexName = "search-listing-details")
 @JsonIgnoreProperties(ignoreUnknown = true)
 @Builder
 @Data
@@ -55,6 +60,7 @@ public class CertifiedProductSearchDetails implements Serializable {
     public static final String EDITION_ID_KEY = "id";
     public static final String EDITION_NAME_KEY = "name";
 
+    @Id
     @Schema(description = "The internal ID of the certified product.")
     private Long id;
 
@@ -78,6 +84,7 @@ public class CertifiedProductSearchDetails implements Serializable {
     @JsonSerialize(using = LocalDateSerializer.class)
     private LocalDate sedTestingEndDay;
 
+    @Transient
     @JsonIgnore
     private String sedTestingEndDateStr;
 
@@ -122,6 +129,7 @@ public class CertifiedProductSearchDetails implements Serializable {
 
     private Long certificationDate;
 
+    @Transient
     @JsonIgnore
     private String certificationDateStr;
 
@@ -165,6 +173,7 @@ public class CertifiedProductSearchDetails implements Serializable {
             + "design certification criterion. It is a binary variable that takes value of true or false.")
     private Boolean accessibilityCertified;
 
+    @Transient
     @JsonIgnore
     private String accessibilityCertifiedStr;
 
@@ -220,6 +229,7 @@ public class CertifiedProductSearchDetails implements Serializable {
      * this value in old listing activity event data. Not all old listing properties need to be present
      * for this reason. This property should not be visible in any response from an API call.
      */
+    @WriteOnlyProperty
     @JsonProperty(access = Access.WRITE_ONLY)
     private LegacyCertificationStatus certificationStatus;
 
@@ -260,18 +270,22 @@ public class CertifiedProductSearchDetails implements Serializable {
     @Schema(description = "URL where the Listings SVAP Notice URL is located")
     private String svapNoticeUrl;
 
+    @Transient
     @Builder.Default
     @ActivityExclude
     private Set<String> warningMessages = new LinkedHashSet<String>();
 
+    @Transient
     @Builder.Default
     @ActivityExclude
     private Set<String> errorMessages = new LinkedHashSet<String>();
 
+    @Transient
     @Builder.Default
     @ActivityExclude
     private Set<String> dataErrorMessages = new HashSet<String>();
 
+    @Transient
     @Builder.Default
     @ActivityExclude
     private Set<String> businessErrorMessages = new HashSet<String>();
@@ -333,6 +347,7 @@ public class CertifiedProductSearchDetails implements Serializable {
         warningMessages.clear();
     }
 
+    @Transient
     public CertificationStatusEvent getCurrentStatus() {
         if (this.getCertificationEvents() == null || this.getCertificationEvents().size() == 0) {
             return null;
@@ -347,6 +362,7 @@ public class CertifiedProductSearchDetails implements Serializable {
         return newest;
     }
 
+    @Transient
     public CertificationStatusEvent getOldestStatus() {
         if (this.getCertificationEvents() == null || this.getCertificationEvents().size() == 0) {
             return null;
@@ -361,6 +377,7 @@ public class CertifiedProductSearchDetails implements Serializable {
         return oldest;
     }
 
+    @Transient
     @Schema(description = "Certification date represented in milliseconds since epoch")
     public Long getCertificationDate() {
         if (CollectionUtils.isEmpty(this.getCertificationEvents())
@@ -383,6 +400,7 @@ public class CertifiedProductSearchDetails implements Serializable {
         return result.getEventDate();
     }
 
+    @Transient
     @Schema(description = "Certification day")
     @JsonDeserialize(using = LocalDateDeserializer.class)
     @JsonSerialize(using = LocalDateSerializer.class)

@@ -3,6 +3,7 @@ package gov.healthit.chpl.certifiedproduct;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -34,6 +35,7 @@ public class CertifiedProductDetailsManager {
     private ListingMeasuresService listingMeasuresService;
     private CertificationStatusEventsService certificationStatusEventsService;
     private SharedListingStoreProvider sharedListingStoreProvider;
+    private ElasticsearchOperations elasticsearchOperations;
     private ResourcePermissions resourcePermissions;
 
     @Autowired
@@ -45,6 +47,7 @@ public class CertifiedProductDetailsManager {
             ListingMeasuresService listingMeasuresService,
             CertificationStatusEventsService certificationStatusEventsService,
             SharedListingStoreProvider sharedListingStoreProvider,
+            ElasticsearchOperations elasticsearchOperations,
             ResourcePermissions resourcePermissions) {
 
         this.certifiedProductSearchResultDAO = certifiedProductSearchResultDAO;
@@ -54,6 +57,7 @@ public class CertifiedProductDetailsManager {
         this.listingMeasuresService = listingMeasuresService;
         this.certificationStatusEventsService = certificationStatusEventsService;
         this.sharedListingStoreProvider = sharedListingStoreProvider;
+        this.elasticsearchOperations = elasticsearchOperations;
         this.resourcePermissions = resourcePermissions;
     }
 
@@ -65,7 +69,7 @@ public class CertifiedProductDetailsManager {
 
     @Transactional(readOnly = true)
     public CertifiedProductSearchDetails getCertifiedProductDetails(Long certifiedProductId) throws EntityRetrievalException {
-        return sharedListingStoreProvider.get(certifiedProductId, () -> {
+        CertifiedProductSearchDetails listing = sharedListingStoreProvider.get(certifiedProductId, () -> {
             try {
                 return listingService.createCertifiedSearchDetails(certifiedProductId);
             } catch (EntityRetrievalException e) {
@@ -73,6 +77,8 @@ public class CertifiedProductDetailsManager {
                 return null;
             }
         });
+        elasticsearchOperations.save(listing);
+        return listing;
     }
 
     @Transactional(readOnly = true)
