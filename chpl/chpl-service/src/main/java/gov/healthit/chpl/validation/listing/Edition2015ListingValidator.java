@@ -9,6 +9,7 @@ import org.springframework.stereotype.Component;
 
 import gov.healthit.chpl.upload.listing.validation.reviewer.AccessibilityStandardReviewer;
 import gov.healthit.chpl.upload.listing.validation.reviewer.QmsStandardReviewer;
+import gov.healthit.chpl.upload.listing.validation.reviewer.SedReviewer;
 import gov.healthit.chpl.upload.listing.validation.reviewer.TestToolReviewer;
 import gov.healthit.chpl.upload.listing.validation.reviewer.UcdProcessReviewer;
 import gov.healthit.chpl.validation.listing.reviewer.CertificationDateReviewer;
@@ -40,6 +41,7 @@ import gov.healthit.chpl.validation.listing.reviewer.UnsupportedCharacterReviewe
 import gov.healthit.chpl.validation.listing.reviewer.UrlReviewer;
 import gov.healthit.chpl.validation.listing.reviewer.ValidDataReviewer;
 import gov.healthit.chpl.validation.listing.reviewer.edition2015.AttestedCriteriaCqmReviewer;
+import gov.healthit.chpl.validation.listing.reviewer.edition2015.CodeSetReviewer;
 import gov.healthit.chpl.validation.listing.reviewer.edition2015.CqmAttestedCriteriaReviewer;
 import gov.healthit.chpl.validation.listing.reviewer.edition2015.FunctionalityTestedAllowedByCriteriaReviewer;
 import gov.healthit.chpl.validation.listing.reviewer.edition2015.FunctionalityTestedAllowedByRoleReviewer;
@@ -100,6 +102,10 @@ public class Edition2015ListingValidator extends Validator {
     @Autowired
     @Qualifier("sedG32015Reviewer")
     private SedG32015Reviewer sedG3Reviewer;
+
+    @Autowired
+    @Qualifier("listingUploadSedReviewer")
+    private SedReviewer sedReviewer;
 
     @Autowired
     @Qualifier("certificationStatusReviewer")
@@ -244,6 +250,9 @@ public class Edition2015ListingValidator extends Validator {
     @Autowired
     private StandardRemovalReviewer standardRemovalReviewer;
 
+    @Autowired
+    private CodeSetReviewer codeSetAllowedByCriteriaReviewer;
+
     @Override
     public synchronized List<Reviewer> getReviewers() {
         List<Reviewer> reviewers = new ArrayList<Reviewer>();
@@ -257,6 +266,7 @@ public class Edition2015ListingValidator extends Validator {
         reviewers.add(testingLabReviewer);
         reviewers.add(validDataReviewer);
         reviewers.add(sedG3Reviewer);
+        reviewers.add(sedReviewer);
         reviewers.add(ucdProcessReviewer);
         reviewers.add(oldCriteriaWithoutIcsReviewer);
         reviewers.add(certStatusReviewer);
@@ -281,12 +291,13 @@ public class Edition2015ListingValidator extends Validator {
         reviewers.add(qmsStandardReviewer);
         reviewers.add(realWorldTestingReviewer);
         reviewers.add(privacyAndSecurityCriteriaReviewer);
+        reviewers.add(codeSetAllowedByCriteriaReviewer);
         return reviewers;
     }
 
     @Override
     public List<ComparisonReviewer> getComparisonReviewers() {
-            List<ComparisonReviewer> comparisonReviewers = new ArrayList<ComparisonReviewer>();
+        List<ComparisonReviewer> comparisonReviewers = new ArrayList<ComparisonReviewer>();
         comparisonReviewers.add(chplNumberComparisonReviewer);
         comparisonReviewers.add(devBanComparisonReviewer);
         comparisonReviewers.add(measureComparisonReviewer);
@@ -301,5 +312,9 @@ public class Edition2015ListingValidator extends Validator {
         comparisonReviewers.add(testingLabComparisonReviewer);
         comparisonReviewers.add(standardRemovalReviewer);
         return comparisonReviewers;
+    }
+
+    public List<ComparisonReviewer> getComparisonReviewersToAlwaysCheck() {
+        return List.of(devBanComparisonReviewer);
     }
 }

@@ -230,6 +230,7 @@ public class CertifiedProductSearchDetails implements Serializable {
      * for this reason. This property should not be visible in any response from an API call.
      */
     @WriteOnlyProperty
+    @Deprecated
     @JsonProperty(access = Access.WRITE_ONLY)
     private LegacyCertificationStatus certificationStatus;
 
@@ -348,18 +349,10 @@ public class CertifiedProductSearchDetails implements Serializable {
     }
 
     @Transient
+    //we don't want to write this to the shared store, but want to always calculate it when we return this object
+    @JsonProperty(value = "currentStatus", access = Access.READ_ONLY)
     public CertificationStatusEvent getCurrentStatus() {
-        if (this.getCertificationEvents() == null || this.getCertificationEvents().size() == 0) {
-            return null;
-        }
-
-        CertificationStatusEvent newest = this.getCertificationEvents().get(0);
-        for (CertificationStatusEvent event : this.getCertificationEvents()) {
-            if (event.getEventDate() > newest.getEventDate()) {
-                newest = event;
-            }
-        }
-        return newest;
+        return getStatusOnDate(new Date());
     }
 
     @Transient

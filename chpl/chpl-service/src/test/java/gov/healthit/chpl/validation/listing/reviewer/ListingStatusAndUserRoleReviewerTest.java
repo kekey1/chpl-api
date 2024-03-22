@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.List;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.junit.Before;
@@ -16,7 +17,9 @@ import gov.healthit.chpl.domain.CertificationResult;
 import gov.healthit.chpl.domain.CertificationStatusEvent;
 import gov.healthit.chpl.domain.CertificationStatusProvider;
 import gov.healthit.chpl.domain.CertifiedProductSearchDetails;
+import gov.healthit.chpl.permissions.ChplResourcePermissions;
 import gov.healthit.chpl.permissions.ResourcePermissions;
+import gov.healthit.chpl.permissions.ResourcePermissionsFactory;
 import gov.healthit.chpl.util.ErrorMessageUtil;
 
 @SuppressWarnings("checkstyle:MethodName")
@@ -30,12 +33,15 @@ public class ListingStatusAndUserRoleReviewerTest {
 
     @Before
     public void before() {
-        resourcePermissions = Mockito.mock(ResourcePermissions.class);
+        resourcePermissions = Mockito.mock(ChplResourcePermissions.class);
 
         messages = Mockito.mock(ErrorMessageUtil.class);
         Mockito.when(messages.getMessage("listing.criteria.userCannotAddOrRemove")).thenReturn("Targeted error message");
 
-        reviewer = new ListingStatusAndUserRoleReviewer(resourcePermissions, messages);
+        ResourcePermissionsFactory resourcePermissionsFactory = Mockito.mock(ResourcePermissionsFactory.class);
+        Mockito.when(resourcePermissionsFactory.get()).thenReturn(resourcePermissions);
+
+        reviewer = new ListingStatusAndUserRoleReviewer(resourcePermissionsFactory, messages);
     }
 
     @Test
@@ -429,6 +435,6 @@ public class ListingStatusAndUserRoleReviewerTest {
                 .id(eventId)
                 .eventDate(sdf.parse(date).getTime())
                 .status(certificationStatusProvider.get(statusId))
-                .build()).toList();
+                .build()).collect(Collectors.toList());
     }
 }

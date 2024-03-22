@@ -20,7 +20,7 @@ import gov.healthit.chpl.domain.CertifiedProductSearchDetails;
 import gov.healthit.chpl.domain.ListingMeasure;
 import gov.healthit.chpl.dto.CertifiedProductDetailsDTO;
 import gov.healthit.chpl.exception.EntityRetrievalException;
-import gov.healthit.chpl.permissions.ResourcePermissions;
+import gov.healthit.chpl.permissions.ResourcePermissionsFactory;
 import gov.healthit.chpl.sharedstore.listing.SharedListingStoreProvider;
 import gov.healthit.chpl.util.AuthUtil;
 import lombok.extern.log4j.Log4j2;
@@ -35,8 +35,8 @@ public class CertifiedProductDetailsManager {
     private ListingMeasuresService listingMeasuresService;
     private CertificationStatusEventsService certificationStatusEventsService;
     private SharedListingStoreProvider sharedListingStoreProvider;
+    private ResourcePermissionsFactory resourcePermissionsFactory;
     private ElasticsearchOperations elasticsearchOperations;
-    private ResourcePermissions resourcePermissions;
 
     @Autowired
     public CertifiedProductDetailsManager(
@@ -47,8 +47,8 @@ public class CertifiedProductDetailsManager {
             ListingMeasuresService listingMeasuresService,
             CertificationStatusEventsService certificationStatusEventsService,
             SharedListingStoreProvider sharedListingStoreProvider,
-            ElasticsearchOperations elasticsearchOperations,
-            ResourcePermissions resourcePermissions) {
+            ResourcePermissionsFactory resourcePermissionsFactory,
+            ElasticsearchOperations elasticsearchOperations) {
 
         this.certifiedProductSearchResultDAO = certifiedProductSearchResultDAO;
         this.listingService = listingService;
@@ -57,8 +57,8 @@ public class CertifiedProductDetailsManager {
         this.listingMeasuresService = listingMeasuresService;
         this.certificationStatusEventsService = certificationStatusEventsService;
         this.sharedListingStoreProvider = sharedListingStoreProvider;
+        this.resourcePermissionsFactory = resourcePermissionsFactory;
         this.elasticsearchOperations = elasticsearchOperations;
-        this.resourcePermissions = resourcePermissions;
     }
 
     @Transactional(readOnly = true)
@@ -100,7 +100,9 @@ public class CertifiedProductDetailsManager {
     @Transactional(readOnly = true)
     public CertifiedProductSearchDetails getCertifiedProductDetailsBasic(Long certifiedProductId) throws EntityRetrievalException {
         CertifiedProductSearchDetails listing = listingService.createCertifiedProductSearchDetailsBasic(certifiedProductId);
-        filterListingDataForUser(listing);
+        if (listing != null) {
+            filterListingDataForUser(listing);
+        }
         return listing;
     }
 
@@ -113,9 +115,9 @@ public class CertifiedProductDetailsManager {
 
     private Boolean canUserViewCertificationEventReasons() {
         return AuthUtil.getCurrentUser() != null
-                && (resourcePermissions.isUserRoleAcbAdmin()
-                        || resourcePermissions.isUserRoleOnc()
-                        || resourcePermissions.isUserRoleAdmin());
+                && (resourcePermissionsFactory.get().isUserRoleAcbAdmin()
+                        || resourcePermissionsFactory.get().isUserRoleOnc()
+                        || resourcePermissionsFactory.get().isUserRoleAdmin());
     }
 
     @Transactional(readOnly = true)

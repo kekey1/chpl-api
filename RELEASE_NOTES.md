@@ -1,5 +1,44 @@
 # Release Notes
 
+## Version 43.6.0
+_18 March 2024_
+
+### Features
+* Add Roles chpl-onc, chpl-developer, chpl-onc-acb to Cognito
+* Service Base URL report - check that the response length is not 0 length
+* Accept educationType and age objects for test participants
+* Add associated ONC-ACBs and Developer Users to Service Base URL List email report
+
+---
+
+## Version 43.5.0
+_5 March 2024_
+
+### Features
+* Add Code Set functionality to selected criteria
+* 'Updated Listing Status Report' should show 'Criteria Require Update Count' only for Active criteria
+* Create one-time job to remove ICS children
+* Add searchTermRecordCount to search API response
+* Create background job to handle future-dated cert status updates
+* Group all activities as STATUS_CHANGE if any status event changes
+* Detect questionable activity if cert status > 30 days in future
+* Deprecate GET /data/developers, /data/products
+
+### Bug Fixes
+* Change current status calculation for listing to use today
+
+---
+
+## Version 43.4.0
+_20 February 2024_
+
+### Features
+* Allow ONC/ADMIN to always update change request status
+* Remove XML response format from search endpoints
+* Add dependency between b11 and g3 criteria (related to SED)
+
+---
+
 ## Version 43.3.0
 _5 February 2024_
 
