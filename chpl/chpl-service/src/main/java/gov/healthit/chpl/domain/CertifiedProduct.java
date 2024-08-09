@@ -4,6 +4,7 @@ import java.io.Serializable;
 import java.time.LocalDate;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.solr.client.solrj.beans.Field;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
@@ -26,20 +27,24 @@ public class CertifiedProduct implements Serializable {
     private static final long serialVersionUID = -6634520925641244762L;
 
     @Schema(description = "Listing internal ID")
+    @Field
     private Long id;
 
     @Schema(description = "The unique CHPL ID of the certified product. New uploads to CHPL will use "
             + "the format: CertEdYr.ATL.ACB.Dev.Prod.Ver.ICS.AddS.Date")
+    @Field
     private String chplProductNumber;
 
-    @Schema(description = "Edition of the listing. Ex: 2011, 2014, or 2015"
-            )
+    @Schema(description = "Edition of the listing. Ex: 2011, 2014, or 2015")
+    @Field
     private String edition;
 
     @Schema(description = "The date the listing was certified given in milliseconds since epoch")
+    @Field
     private long certificationDate;
 
     @Schema(description = "The current certification status of the Listing")
+    @Field
     private String certificationStatus;
 
     @Schema(description = "Whether the Listing is considered \"Cures Update\" or not")
