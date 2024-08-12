@@ -12,11 +12,14 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.solr.client.solrj.SolrClient;
+import org.apache.solr.client.solrj.impl.HttpJdkSolrClient;
 import org.quartz.DisallowConcurrentExecution;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
@@ -46,6 +49,7 @@ public class CertifiedProductDownloadableResourceCreatorJob extends Downloadable
     private static final String CSV_SCHEMA_2014_FILENAME = "2014 Listing CSV Data Dictionary Base.csv";
     private static final String CSV_SCHEMA_FILENAME = "Listing CSV Data Dictionary Base.csv";
     private static final int MILLIS_PER_SECOND = 1000;
+    private static final String INDEX_NAME = "active-certificates";
 
     private CertificationEditionConcept edition;
     private List<CertificationStatusType> certificationStatuses;
@@ -64,6 +68,8 @@ public class CertifiedProductDownloadableResourceCreatorJob extends Downloadable
     @Autowired
     private Environment env;
 
+    private SolrClient solrClient;
+
     public CertifiedProductDownloadableResourceCreatorJob() throws Exception {
         super(LOGGER);
         edition = null;
@@ -74,6 +80,8 @@ public class CertifiedProductDownloadableResourceCreatorJob extends Downloadable
         SpringBeanAutowiringSupport.processInjectionBasedOnCurrentContext(this);
         initializeEdition(jobContext);
         initializeCertificationStatuses(jobContext);
+
+        solrClient = getSolrClient();
 
         LOGGER.info("********* Starting the Certified Product Downloadable Resource Creator job for {}. *********", getDownloadFileType());
         try (CertifiedProductJsonPresenter jsonPresenter = new CertifiedProductJsonPresenter();
@@ -119,7 +127,10 @@ public class CertifiedProductDownloadableResourceCreatorJob extends Downloadable
         for (CertifiedProductDetailsDTO certifiedProductDetails : listings) {
             futures.add(CompletableFuture
                     .supplyAsync(() -> getCertifiedProductSearchDetails(certifiedProductDetails.getId()), executorService)
-                    .thenAccept(listing -> listing.ifPresent(cp -> addToPresenters(presenters, cp))));
+                    .thenAccept(listing -> listing.ifPresent(cp -> {
+                        addToPresenters(presenters, cp);
+                        addToSolr(cp);
+                    })));
         }
         return futures;
     }
@@ -133,6 +144,16 @@ public class CertifiedProductDownloadableResourceCreatorJob extends Downloadable
                         LOGGER.error(String.format("Could not write listing to presenters: %s", listing.getId()), e);
                     }
                 });
+    }
+
+    private void addToSolr(CertifiedProductSearchDetails listing) {
+        try {
+            solrClient.addBean(INDEX_NAME, listing);
+            LOGGER.info("Added listing " + listing.getId() + " into Solr");
+            solrClient.commit();
+        } catch (Exception ex) {
+            LOGGER.error("Could not put listing " + listing.getId() + " into Solr", ex);
+        }
     }
 
     private void initializeWritingToFiles(CertifiedProductJsonPresenter jsonPresenter, CertifiedProductCsvPresenter csvPresenter)
@@ -386,5 +407,13 @@ public class CertifiedProductDownloadableResourceCreatorJob extends Downloadable
             type = "?";
         }
         return type;
+    }
+
+    private SolrClient getSolrClient() {
+        final String solrUrl = "http://localhost:8983/solr";
+        return new HttpJdkSolrClient.Builder(solrUrl)
+            .withConnectionTimeout(10000, TimeUnit.MILLISECONDS)
+            .withRequestTimeout(60000, TimeUnit.MILLISECONDS)
+            .build();
     }
 }

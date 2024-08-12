@@ -13,6 +13,7 @@ import java.util.Set;
 
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.solr.client.solrj.beans.Field;
 import org.eclipse.collections.api.set.sorted.ImmutableSortedSet;
 import org.eclipse.collections.impl.factory.SortedSets;
 
@@ -55,26 +56,35 @@ public class CertifiedProductSearchDetails implements Serializable {
     public static final String EDITION_NAME_KEY = "name";
 
     @Schema(description = "The internal ID of the certified product.")
+    //note we would have to do something to treat this as a string for Solr
+    //Solr does not allow "id" fields to be Longs and reflection from Solr search response
+    //to java bean fails (cannot convert String to Long)
+    @Field
     private Long id;
 
     @Schema(description = "The unique CHPL ID of the certified product. New uploads to CHPL will use the format: "
             + "CertEdYr.ATL.ACB.Dev.Prod.Ver.ICS.AddS.Date")
+    @Field
     private String chplProductNumber;
 
     @Schema(description = "A hyperlink to the test results used to certify the Complete EHRs and/or EHR Modules that can be accessed by the public. "
             + "This variable is applicable to 2014 Edition. Fully qualified URL which is reachable via web browser validation and verification.")
+    @Field
     private String reportFileLocation;
 
     @Schema(description = "Hyperlink to FULL Usability Test Report meeting all the SED requirements. "
             + "Fully qualified URL which is reachable via web browser validation and verification.")
+    @Field
     private String sedReportFileLocation;
 
     @Schema(description = "For SED testing, a description of the intended users of the Health IT")
+    @Field
     private String sedIntendedUserDescription;
 
     @Schema(description = "Date all SED testing was concluded for the Health IT. The format for the date is YYYMMDD")
     @JsonDeserialize(using = LocalDateDeserializer.class)
     @JsonSerialize(using = LocalDateSerializer.class)
+    @Field
     private LocalDate sedTestingEndDay;
 
     @JsonIgnore
@@ -82,6 +92,7 @@ public class CertifiedProductSearchDetails implements Serializable {
 
     @Schema(description = "The ID used by ONC-ACBs for internal tracking. "
             + "It is a string variable that does not have any restrictions on formatting or values.")
+    @Field
     private String acbCertificationId;
 
     @Schema(description = "The classification of the certified product (either complete or modular). It is only applicable to 2014 Edition, and takes values "
@@ -89,6 +100,7 @@ public class CertifiedProductSearchDetails implements Serializable {
     private Map<String, Object> classificationType = new HashMap<String, Object>();
 
     @Schema(description = "If there was previously a different certifying body managing this listing this is their name.")
+    @Field
     private String otherAcb;
 
     @Schema(description = "The developer or vendor of the certified health IT product listing.")
@@ -123,6 +135,10 @@ public class CertifiedProductSearchDetails implements Serializable {
     @Builder.Default
     private List<CertifiedProductTestingLab> testingLabs = new ArrayList<CertifiedProductTestingLab>();
 
+    @Field
+    private String certificationDay;
+
+    @Field
     private Long certificationDate;
 
     @JsonIgnore
@@ -131,28 +147,36 @@ public class CertifiedProductSearchDetails implements Serializable {
     @JsonDeserialize(using = LocalDateDeserializer.class)
     @JsonSerialize(using = LocalDateSerializer.class)
     @Schema(description = "Decertification day")
+    @Field
     private LocalDate decertificationDay;
 
     @Schema(description = "Number of certification criteria this listing attests to.")
+    @Field
     private Integer countCerts;
 
     @Schema(description = "Number of cqms this listing attests to.")
+    @Field
     private Integer countCqms;
 
     @Schema(description = "Total count of open+closed surveillance for this listing.")
+    @Field
     private Integer countSurveillance;
 
     @Schema(description = "Total count of open surveillance for this listing.")
+    @Field
     private Integer countOpenSurveillance;
 
     @Schema(description = "Total count of closed surveillance for this listing.")
+    @Field
     private Integer countClosedSurveillance;
 
     @Schema(description = "The total number of open (unresolved) non-conformities found for the corresponding listing. For additional information, "
             + "please see 'Understanding Surveillance Information in the CHPL', available in the CHPL Public User Guide")
+    @Field
     private Integer countOpenNonconformities;
 
     @Schema(description = "Total count of closed nonconformities for this listing.")
+    @Field
     private Integer countClosedNonconformities;
 
     @Schema(description = "This variable indicates whether or not the certification issued was a result of an inherited certified status request. "
@@ -161,15 +185,18 @@ public class CertifiedProductSearchDetails implements Serializable {
 
     @Schema(description = "This variable identifies if Health IT Module was certified to the accessibility-centered "
             + "design certification criterion. It is a binary variable that takes value of true or false.")
+    @Field
     private Boolean accessibilityCertified;
 
     @JsonIgnore
     private String accessibilityCertifiedStr;
 
     @Schema(description = "For legacy CHPL listings, any additional software needed.")
+    @Field
     private String productAdditionalSoftware;
 
     @Schema(description = "A hyperlink to the mandatory disclosures required by 170.523(k)(1) for the Health IT Module")
+    @Field
     private String mandatoryDisclosures;
 
     @Schema(description = "Any surveillance that has occurred on this listing")
@@ -178,6 +205,7 @@ public class CertifiedProductSearchDetails implements Serializable {
     @Schema(description = "Direct reviews that were conducted against this listing or its developer.")
     private List<DirectReview> directReviews = new ArrayList<DirectReview>();
 
+    @Field
     private boolean directReviewsAvailable;
 
     @Schema(description = "A record of CHPL Product Numbers which have been used at some time in the past to reference the listing.")
@@ -241,28 +269,33 @@ public class CertifiedProductSearchDetails implements Serializable {
     private CertifiedProductSed sed = new CertifiedProductSed();
 
     @Schema(description = "URL where the listings Real World Testing Plan is located")
+    @Field
     private String rwtPlansUrl;
 
     @Schema(description = "Date the listings Real World Testing Plan was submitted")
     @JsonDeserialize(using = LocalDateDeserializer.class)
     @JsonSerialize(using = LocalDateSerializer.class)
+    @Field
     private LocalDate rwtPlansCheckDate;
 
     @JsonIgnore
     private String userEnteredRwtPlansCheckDate;
 
     @Schema(description = "URL where the listings Real World Testing Results is located")
+    @Field
     private String rwtResultsUrl;
 
     @Schema(description = "Date the listings Real World Testing Results was submitted")
     @JsonDeserialize(using = LocalDateDeserializer.class)
     @JsonSerialize(using = LocalDateSerializer.class)
+    @Field
     private LocalDate rwtResultsCheckDate;
 
     @JsonIgnore
     private String userEnteredRwtResultsCheckDate;
 
     @Schema(description = "URL where the Listings SVAP Notice URL is located")
+    @Field
     private String svapNoticeUrl;
 
     @Builder.Default
