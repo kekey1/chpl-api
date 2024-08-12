@@ -31,7 +31,7 @@ public class SolrTest {
         SolrCertifiedProduct listing = SolrCertifiedProduct.builder()
                 .id("1")
                 .chplProductNumber("15.05.05.3121.CHRP.01.01.1.220912")
-                .certificationDay("[" + yesterday + " TO " + yesterday+ "]")
+                .certificationDay("[" + yesterday + " TO " + yesterday + "]")
                 .acb("Drummond Group, Inc")
                 .atls(Stream.of("ICSA", "Leidos").toList())
                 .developer("Epic")
@@ -55,9 +55,9 @@ public class SolrTest {
         final List<SolrCertifiedProduct> queryResults = queryResponse.getBeans(SolrCertifiedProduct.class);
         assertNotNull(queryResults);
         assertEquals(1, queryResults.size());
-        assertEquals(2L, queryResults.get(0).getId());
+        assertEquals("1", queryResults.get(0).getId());
         assertNotNull(queryResults.get(0).getCqms());
-        assertEquals(1L, queryResults.get(0).getCqms().size());
+        assertEquals(2, queryResults.get(0).getCqms().size());
     }
 
     private SolrClient getSolrClient() {

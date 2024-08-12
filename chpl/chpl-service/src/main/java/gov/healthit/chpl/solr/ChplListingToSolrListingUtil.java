@@ -7,6 +7,7 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import gov.healthit.chpl.domain.Address;
+import gov.healthit.chpl.domain.CQMResultDetails;
 import gov.healthit.chpl.domain.CertifiedProductChplProductNumberHistory;
 import gov.healthit.chpl.domain.CertifiedProductSearchDetails;
 import gov.healthit.chpl.domain.CertifiedProductTestingLab;
@@ -42,6 +43,7 @@ public class ChplListingToSolrListingUtil {
                 .sedTestingEndDay(buildDateRange(chplListing.getSedTestingEndDay()))
                 .svapNoticeUrl(chplListing.getSvapNoticeUrl())
                 .version(chplListing.getVersion().getVersion())
+                .cqms(convertCqms(chplListing.getCqmResults()))
                 .build();
     }
 
@@ -64,6 +66,21 @@ public class ChplListingToSolrListingUtil {
                 .toList();
     }
 
+    private static List<String> convertCqms(List<CQMResultDetails> cqms) {
+        if (CollectionUtils.isEmpty(cqms)) {
+            return null;
+        }
+        List<CQMResultDetails> attestedCqms = cqms.stream()
+                .filter(cqm -> cqm.getSuccess() != null && cqm.getSuccess())
+                .toList();
+        if(CollectionUtils.isEmpty(attestedCqms)) {
+            return null;
+        }
+        return attestedCqms.stream()
+                .map(cqm -> cqm.getCmsId())
+                .toList();
+    }
+
     private static String buildStreetAddress(Address address) {
         if (address == null) {
             return null;
@@ -72,7 +89,7 @@ public class ChplListingToSolrListingUtil {
         if (!StringUtils.isEmpty(address.getLine1())) {
             allAddressLines += address.getLine1();
         }
-        if( !StringUtils.isEmpty(address.getLine2())) {
+        if(!StringUtils.isEmpty(address.getLine2())) {
             if (!StringUtils.isEmpty(allAddressLines)) {
                 allAddressLines += " ";
             }
