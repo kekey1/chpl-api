@@ -106,5 +106,24 @@ public class SolrCertifiedProduct {
     private String svapNoticeUrl;
 
     @Field
-    private List<String> cqms;
+    private List<String> listingsRelatedViaInheritance;
+
+    @Field
+    private List<String> accessibilityStandardNames;
+
+    @Field
+    private List<String> targetedUserNames;
+
+    @Field
+    private List<String> qmsStandardNames;
+    //TODO also could have fields for qms standard modifications and applicable criteria
+
+    @Field
+    private List<String> measures;
+
+    @Field
+    private List<String> attestedCqms;
+
+    @Field
+    private List<String> attestedCriteria;
 }

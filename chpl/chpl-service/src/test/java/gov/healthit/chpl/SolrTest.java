@@ -38,7 +38,7 @@ public class SolrTest {
                 .product("EpicCare")
                 .version("1.1")
                 .accessibilityCertified(false)
-                .cqms(Stream.of("CMS123", "CMS456").toList())
+                .attestedCqms(Stream.of("CMS123", "CMS456").toList())
                 .build();
         try {
             UpdateResponse response = client.addBean(INDEX_NAME, listing);
@@ -56,8 +56,8 @@ public class SolrTest {
         assertNotNull(queryResults);
         assertEquals(1, queryResults.size());
         assertEquals("1", queryResults.get(0).getId());
-        assertNotNull(queryResults.get(0).getCqms());
-        assertEquals(2, queryResults.get(0).getCqms().size());
+        assertNotNull(queryResults.get(0).getAttestedCqms());
+        assertEquals(2, queryResults.get(0).getAttestedCqms().size());
     }
 
     private SolrClient getSolrClient() {
