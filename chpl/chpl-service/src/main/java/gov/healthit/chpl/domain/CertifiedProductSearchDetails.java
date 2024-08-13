@@ -124,8 +124,6 @@ public class CertifiedProductSearchDetails implements Serializable {
     @Builder.Default
     private List<CertifiedProductTestingLab> testingLabs = new ArrayList<CertifiedProductTestingLab>();
 
-    private String certificationDay;
-
     private Long certificationDate;
 
     @JsonIgnore

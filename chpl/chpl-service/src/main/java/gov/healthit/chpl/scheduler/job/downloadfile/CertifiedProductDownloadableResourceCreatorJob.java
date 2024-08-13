@@ -39,6 +39,8 @@ import gov.healthit.chpl.scheduler.presenter.CertifiedProduct2011And2014CsvPrese
 import gov.healthit.chpl.scheduler.presenter.CertifiedProductCsvPresenter;
 import gov.healthit.chpl.scheduler.presenter.CertifiedProductJsonPresenter;
 import gov.healthit.chpl.scheduler.presenter.CertifiedProductPresenter;
+import gov.healthit.chpl.solr.ChplListingToSolrListingUtil;
+import gov.healthit.chpl.solr.SolrCertifiedProduct;
 import gov.healthit.chpl.util.Util;
 import lombok.extern.log4j.Log4j2;
 
@@ -67,6 +69,9 @@ public class CertifiedProductDownloadableResourceCreatorJob extends Downloadable
 
     @Autowired
     private Environment env;
+
+    @Autowired
+    private ChplListingToSolrListingUtil solrUtil;
 
     private SolrClient solrClient;
 
@@ -148,9 +153,10 @@ public class CertifiedProductDownloadableResourceCreatorJob extends Downloadable
 
     private void addToSolr(CertifiedProductSearchDetails listing) {
         try {
-            solrClient.addBean(INDEX_NAME, listing);
-            LOGGER.info("Added listing " + listing.getId() + " into Solr");
-            solrClient.commit();
+            SolrCertifiedProduct solrCp = solrUtil.convert(listing);
+            solrClient.addBean(INDEX_NAME, solrCp);
+            LOGGER.info("Added listing " + solrCp.getId() + " into Solr");
+            solrClient.commit(INDEX_NAME);
         } catch (Exception ex) {
             LOGGER.error("Could not put listing " + listing.getId() + " into Solr", ex);
         }
