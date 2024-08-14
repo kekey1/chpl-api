@@ -1,6 +1,7 @@
 package gov.healthit.chpl.solr;
 
 import java.util.List;
+import java.util.Set;
 
 import org.apache.solr.client.solrj.beans.Field;
 
@@ -21,6 +22,9 @@ public class SolrCertifiedProduct {
 
     @Field
     private String chplProductNumber;
+
+    @Field
+    private String certificationStatus;
 
     @Field
     private String reportFileLocation;
@@ -126,4 +130,44 @@ public class SolrCertifiedProduct {
 
     @Field
     private List<String> attestedCriteria;
+
+    @Field
+    private Set<String> additionalSoftwareNames;
+
+    @Field
+    private Set<String> conformanceMethodNames;
+
+    @Field
+    private Set<String> documentationUrls;
+
+    @Field
+    private Set<String> exportDocumentation;
+
+    @Field
+    private Set<String> functionalitiesTestedNames;
+
+    @Field
+    private Set<String> optionalStandardNames;
+
+    @Field
+    private Set<String> privacySecurityFramework;
+
+    @Field
+    private Set<String> riskManagementSummaryInformation;
+
+    @Field
+    private Set<String> serviceBaseUrlList;
+
+    @Field
+    private Set<String> standardNames;
+
+    @Field
+    private Set<String> svaps;
+
+    @Field
+    private Set<String> testDataNames;
+
+    @Field
+    private Set<String> testToolNames;
+
 }
