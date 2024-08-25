@@ -21,10 +21,12 @@ import gov.healthit.chpl.domain.CertifiedProductAccessibilityStandard;
 import gov.healthit.chpl.domain.CertifiedProductChplProductNumberHistory;
 import gov.healthit.chpl.domain.CertifiedProductQmsStandard;
 import gov.healthit.chpl.domain.CertifiedProductSearchDetails;
+import gov.healthit.chpl.domain.CertifiedProductSed;
 import gov.healthit.chpl.domain.CertifiedProductTargetedUser;
 import gov.healthit.chpl.domain.CertifiedProductTestingLab;
 import gov.healthit.chpl.domain.InheritedCertificationStatus;
 import gov.healthit.chpl.domain.ListingMeasure;
+import gov.healthit.chpl.domain.surveillance.Surveillance;
 import gov.healthit.chpl.exception.EntityRetrievalException;
 import gov.healthit.chpl.functionalitytested.CertificationResultFunctionalityTested;
 import gov.healthit.chpl.listing.ics.IcsManager;
@@ -80,6 +82,7 @@ public class ChplListingToSolrListingUtil {
                 .accessibilityStandardNames(convertAccessibilityStandards(chplListing.getAccessibilityStandards()))
                 .targetedUserNames(convertTargetedUsers(chplListing.getTargetedUsers()))
                 .qmsStandardNames(convertQms(chplListing.getQmsStandards()))
+                .qmsStandardModifications(convertQmsModifications(chplListing.getQmsStandards()))
                 .measures(convertMeasures(chplListing.getMeasures()))
                 .listingsRelatedViaInheritance(convertIcs(chplListing.getId(), chplListing.getIcs()))
                 .attestedCqms(convertCqms(chplListing.getCqmResults()))
@@ -97,6 +100,13 @@ public class ChplListingToSolrListingUtil {
                 .svaps(convertToSvaps(chplListing.getCertificationResults()))
                 .testDataNames(convertToTestData(chplListing.getCertificationResults()))
                 .testToolNames(convertToTestTools(chplListing.getCertificationResults()))
+                .testTaskDescriptions(convertToTestTaskDescriptions(chplListing.getSed()))
+                .testParticipantEducations(convertToParticipantEducations(chplListing.getSed()))
+                .testParticipantOccupations(convertToParticipantOccupations(chplListing.getSed()))
+                .nonconformitySummary(convertToNonconformitySummary(chplListing.getSurveillance()))
+                .nonconformityFindings(convertToNonconformityFindings(chplListing.getSurveillance()))
+                .nonconformityResolution(convertToNonconformityResolution(chplListing.getSurveillance()))
+                .nonconformityDeveloperExplanations(convertToNonconformityDeveloperExplanations(chplListing.getSurveillance()))
                 .build();
     }
 
@@ -163,6 +173,16 @@ public class ChplListingToSolrListingUtil {
         }
         return qmsStandards.stream()
                 .map(qmsStandard -> qmsStandard.getQmsStandardName())
+                .toList();
+    }
+
+    private List<String> convertQmsModifications(List<CertifiedProductQmsStandard> qmsStandards) {
+        if (CollectionUtils.isEmpty(qmsStandards)) {
+            return null;
+        }
+        return qmsStandards.stream()
+                .filter(qmsStandard -> !StringUtils.isEmpty(qmsStandard.getQmsModification()))
+                .map(qmsStandard -> qmsStandard.getQmsModification())
                 .toList();
     }
 
@@ -404,6 +424,83 @@ public class ChplListingToSolrListingUtil {
         return allTestTools.stream()
                 .map(tt -> tt.getTestTool().getValue())
                 .collect(Collectors.toSet());
+    }
+
+    private Set<String> convertToTestTaskDescriptions(CertifiedProductSed sed) {
+        if (sed == null || CollectionUtils.isEmpty(sed.getTestTasks())) {
+            return null;
+        }
+        return sed.getTestTasks().stream()
+            .map(testTask -> testTask.getDescription())
+            .collect(Collectors.toSet());
+    }
+
+    private Set<String> convertToParticipantOccupations(CertifiedProductSed sed) {
+        if (sed == null || CollectionUtils.isEmpty(sed.getTestTasks())) {
+            return null;
+        }
+        return sed.getTestTasks().stream()
+                .flatMap(testTask -> testTask.getTestParticipants().stream())
+                .map(participant -> participant.getOccupation())
+                .collect(Collectors.toSet());
+    }
+
+    private Set<String> convertToParticipantEducations(CertifiedProductSed sed) {
+        if (sed == null || CollectionUtils.isEmpty(sed.getTestTasks())) {
+            return null;
+        }
+        return sed.getTestTasks().stream()
+                .flatMap(testTask -> testTask.getTestParticipants().stream())
+                .map(participant -> participant.getEducationType().getName())
+                .collect(Collectors.toSet());
+    }
+
+    private Set<String> convertToNonconformitySummary(List<Surveillance> survs) {
+        if (CollectionUtils.isEmpty(survs)) {
+            return null;
+        }
+        return survs.stream()
+            .flatMap(surv -> surv.getRequirements().stream())
+            .flatMap(req -> req.getNonconformities().stream())
+            .filter(nc -> !StringUtils.isEmpty(nc.getSummary()))
+            .map(nc -> nc.getSummary())
+            .collect(Collectors.toSet());
+    }
+
+    private Set<String> convertToNonconformityFindings(List<Surveillance> survs) {
+        if (CollectionUtils.isEmpty(survs)) {
+            return null;
+        }
+        return survs.stream()
+            .flatMap(surv -> surv.getRequirements().stream())
+            .flatMap(req -> req.getNonconformities().stream())
+            .filter(nc -> !StringUtils.isEmpty(nc.getFindings()))
+            .map(nc -> nc.getFindings())
+            .collect(Collectors.toSet());
+    }
+
+    private Set<String> convertToNonconformityResolution(List<Surveillance> survs) {
+        if (CollectionUtils.isEmpty(survs)) {
+            return null;
+        }
+        return survs.stream()
+            .flatMap(surv -> surv.getRequirements().stream())
+            .flatMap(req -> req.getNonconformities().stream())
+            .filter(nc -> !StringUtils.isEmpty(nc.getResolution()))
+            .map(nc -> nc.getResolution())
+            .collect(Collectors.toSet());
+    }
+
+    private Set<String> convertToNonconformityDeveloperExplanations(List<Surveillance> survs) {
+        if (CollectionUtils.isEmpty(survs)) {
+            return null;
+        }
+        return survs.stream()
+            .flatMap(surv -> surv.getRequirements().stream())
+            .flatMap(req -> req.getNonconformities().stream())
+            .filter(nc -> !StringUtils.isEmpty(nc.getDeveloperExplanation()))
+            .map(nc -> nc.getDeveloperExplanation())
+            .collect(Collectors.toSet());
     }
 
     private String buildStreetAddress(Address address) {

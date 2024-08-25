@@ -120,7 +120,10 @@ public class SolrCertifiedProduct {
 
     @Field
     private List<String> qmsStandardNames;
-    //TODO also could have fields for qms standard modifications and applicable criteria
+
+    @Field
+    private List<String> qmsStandardModifications;
+    //TODO also could have fields for qms standard applicable criteria
 
     @Field
     private List<String> measures;
@@ -170,4 +173,26 @@ public class SolrCertifiedProduct {
     @Field
     private Set<String> testToolNames;
 
+    //SED
+    @Field
+    private Set<String> testTaskDescriptions;
+
+    @Field
+    private Set<String> testParticipantOccupations;
+
+    @Field
+    private Set<String> testParticipantEducations;
+
+    //Surveillance
+    @Field
+    private Set<String> nonconformitySummary;
+
+    @Field
+    private Set<String> nonconformityFindings;
+
+    @Field
+    private Set<String> nonconformityResolution;
+
+    @Field
+    private Set<String> nonconformityDeveloperExplanations;
 }

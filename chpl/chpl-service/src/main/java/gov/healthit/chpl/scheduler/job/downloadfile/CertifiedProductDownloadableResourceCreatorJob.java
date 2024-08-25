@@ -51,7 +51,7 @@ public class CertifiedProductDownloadableResourceCreatorJob extends Downloadable
     private static final String CSV_SCHEMA_2014_FILENAME = "2014 Listing CSV Data Dictionary Base.csv";
     private static final String CSV_SCHEMA_FILENAME = "Listing CSV Data Dictionary Base.csv";
     private static final int MILLIS_PER_SECOND = 1000;
-    private static final String INDEX_NAME = "active-certificates";
+    private static final String INDEX_NAME = "listings";
 
     private CertificationEditionConcept edition;
     private List<CertificationStatusType> certificationStatuses;
