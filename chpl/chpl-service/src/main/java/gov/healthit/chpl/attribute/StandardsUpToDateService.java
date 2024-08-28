@@ -7,6 +7,7 @@ import java.util.OptionalLong;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.mutable.MutableBoolean;
 import org.apache.commons.lang3.tuple.Pair;
 
 import gov.healthit.chpl.certificationCriteria.CertificationCriterion;
@@ -19,7 +20,6 @@ import gov.healthit.chpl.standard.StandardDAO;
 import gov.healthit.chpl.standard.StandardGroupService;
 import gov.healthit.chpl.util.CertificationResultRules;
 import gov.healthit.chpl.util.DateUtil;
-import jodd.mutable.MutableBoolean;
 import lombok.extern.log4j.Log4j2;
 
 @Log4j2
@@ -135,16 +135,16 @@ public class StandardsUpToDateService {
     }
 
     public Boolean doesStandardExistForEachGroup(CertificationResult certResult, LocalDate validAsOfDate) {
-        MutableBoolean doesStandardExistForEachGroup = MutableBoolean.of(true);
+        MutableBoolean doesStandardExistForEachGroup = new MutableBoolean(true);
         standardGroupService.getGroupedStandardsForCriteria(certResult.getCriterion(), validAsOfDate).entrySet().stream()
                 .filter(standardGroup -> standardGroup.getValue().size() >= 2)
-                .takeWhile(standatdGroup -> doesStandardExistForEachGroup.value)
+                .takeWhile(standardGroup -> doesStandardExistForEachGroup.getValue())
                 .forEach(standardGroup -> {
                     if (!doesAtLeastOneStandardForGroupExistForCriterion(standardGroup.getValue(), certResult)) {
-                        doesStandardExistForEachGroup.set(false);
+                        doesStandardExistForEachGroup.setFalse();
                     }
                 });
-        return doesStandardExistForEachGroup.value;
+        return doesStandardExistForEachGroup.getValue();
     }
 
     private boolean doesAtLeastOneStandardForGroupExistForCriterion(List<Standard> groupedStandards, CertificationResult certResult) {
