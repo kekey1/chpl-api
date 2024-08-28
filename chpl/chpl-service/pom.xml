@@ -28,9 +28,8 @@
       <postgresql.version>42.7.2</postgresql.version>
       <quartz.version>2.5.0-rc1</quartz.version>
       <zxcvbn.version>1.7.0</zxcvbn.version>
-      <spring.data.redis.version>3.3.3</spring.data.redis.version>
-      <redisson.version>3.35.0</redisson.version>
-      <!-- To upgrade to the next 2.1 version of this ff4j redis library we need to upgrade to Java 21 -->
+      <spring.data.redis.version>3.2.5</spring.data.redis.version>
+      <redisson.version>3.22.0</redisson.version>
       <ff4j.store.redis.version>2.0.0</ff4j.store.redis.version>
       <org.springdoc.version>2.5.0</org.springdoc.version>
     </properties>
