@@ -40,6 +40,7 @@ public class CognitoUpdateUserValidator {
     }
 
     private Set<String> validateUser(User user) {
+        normalizeSpacesInUserInfo(user);
         Set<String> validationErrors = new HashSet<String>();
 
         if (!doesUserExistInCognito(user.getCognitoId())) {
@@ -48,12 +49,6 @@ public class CognitoUpdateUserValidator {
 
         if (StringUtils.isEmpty(user.getFullName())) {
             validationErrors.add(msgUtil.getMessage("cognito.user.create.fullName.empty"));
-        }
-
-        if (StringUtils.isEmpty(user.getPhoneNumber())) {
-            validationErrors.add(msgUtil.getMessage("cognito.user.create.phoneNumber.empty"));
-        } else if (!isPhoneNumberValid(user.getPhoneNumber())) {
-            validationErrors.add(msgUtil.getMessage("cognito.user.create.phoneNumber.invalid"));
         }
 
         if (StringUtils.isEmpty(user.getEmail())) {
@@ -65,6 +60,14 @@ public class CognitoUpdateUserValidator {
         return validationErrors;
     }
 
+    private void normalizeSpacesInUserInfo(User user) {
+        user.setEmail(StringUtils.normalizeSpace(user.getEmail()));
+        user.setFriendlyName(StringUtils.normalizeSpace(user.getFriendlyName()));
+        user.setFullName(StringUtils.normalizeSpace(user.getFullName()));
+        user.setPhoneNumber(StringUtils.normalizeSpace(user.getPhoneNumber()));
+        user.setTitle(StringUtils.normalizeSpace(user.getTitle()));
+    }
+
     private Boolean doesUserExistInCognito(UUID cognitoId) {
         try {
             return cognitoApiWrapper.getUserInfo(cognitoId) != null;
@@ -72,9 +75,4 @@ public class CognitoUpdateUserValidator {
             return false;
         }
     }
-
-    private Boolean isPhoneNumberValid(String phoneNumber) {
-        return phoneNumber.matches("\\(?\\d{3}\\)?-? *\\d{3}-? *-?\\d{4}");
-    }
-
 }

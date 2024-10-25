@@ -37,15 +37,14 @@ public class CognitoUserCreationValidator {
     }
 
     public Set<String> validate(CreateUserFromInvitationRequest userInfo) {
+        normalizeSpacesInUserInfo(userInfo);
         Set<String> messages = new HashSet<String>();
-
 
         if (isInvitationExpired(UUID.fromString(userInfo.getHash()))) {
             messages.add(msgUtil.getMessage("user.invitation.expired",
                     invitationLengthInDays + "",
                     invitationLengthInDays == 1 ? "" : "s"));
         }
-
 
         if (userInfo.getUser() == null || userInfo.getUser().getEmail() == null) {
             messages.add(msgUtil.getMessage("user.email.required"));
@@ -67,6 +66,14 @@ public class CognitoUserCreationValidator {
         return messages;
     }
 
+    private void normalizeSpacesInUserInfo(CreateUserFromInvitationRequest userInfo) {
+        userInfo.getUser().setEmail(StringUtils.normalizeSpace(userInfo.getUser().getEmail()));
+        userInfo.getUser().setFriendlyName(StringUtils.normalizeSpace(userInfo.getUser().getFriendlyName()));
+        userInfo.getUser().setFullName(StringUtils.normalizeSpace(userInfo.getUser().getFullName()));
+        userInfo.getUser().setPhoneNumber(StringUtils.normalizeSpace(userInfo.getUser().getPhoneNumber()));
+        userInfo.getUser().setTitle(StringUtils.normalizeSpace(userInfo.getUser().getTitle()));
+    }
+
     private Boolean isInvitationExpired(UUID token) {
         CognitoUserInvitation invitation = userInvitationDAO.getByToken(token);
         return invitation == null || invitation.isOlderThan(invitationLengthInDays);
@@ -77,12 +84,6 @@ public class CognitoUserCreationValidator {
 
         if (StringUtils.isEmpty(request.getUser().getFullName())) {
             validationErrors.add(msgUtil.getMessage("cognito.user.create.fullName.empty"));
-        }
-
-        if (StringUtils.isEmpty(request.getUser().getPhoneNumber())) {
-            validationErrors.add(msgUtil.getMessage("cognito.user.create.phoneNumber.empty"));
-        } else if (!isPhoneNumberValid(request.getUser().getPhoneNumber())) {
-            validationErrors.add(msgUtil.getMessage("cognito.user.create.phoneNumber.invalid"));
         }
 
         if (StringUtils.isEmpty(request.getUser().getEmail())) {
@@ -96,9 +97,5 @@ public class CognitoUserCreationValidator {
 
     private Boolean doesUserExistInCognito(String email) throws UserRetrievalException {
         return cognitoApiWrapper.getUserInfo(email) != null;
-    }
-
-    private Boolean isPhoneNumberValid(String phoneNumber) {
-        return phoneNumber.matches("\\(?\\d{3}\\)?-? *\\d{3}-? *-?\\d{4}");
     }
 }

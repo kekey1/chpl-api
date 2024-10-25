@@ -7,10 +7,12 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import gov.healthit.chpl.domain.auth.User;
 import gov.healthit.chpl.exception.EmailNotSentException;
 import gov.healthit.chpl.exception.UserRetrievalException;
 import gov.healthit.chpl.exception.ValidationException;
 import gov.healthit.chpl.user.cognito.CognitoApiWrapper;
+import gov.healthit.chpl.util.AuthUtil;
 import lombok.extern.log4j.Log4j2;
 
 @Log4j2
@@ -20,14 +22,17 @@ public class CognitoPasswordManager {
     private CognitoApiWrapper cognitoApiWrapper;
     private CognitoForgotPasswordDAO cognitoForgotPasswordDAO;
     private CognitoForgotPasswordEmailer cognitoForgotPasswordEmailer;
+    private CognitoPasswordChangedEmailer cognitoPasswordChangedEmailer;
     private Long forgotTokenValidInHours;
 
     @Autowired
     public CognitoPasswordManager(CognitoApiWrapper cognitoApiWrapper, CognitoForgotPasswordDAO cognitoForgotPasswordDAO,
-            CognitoForgotPasswordEmailer cognitoForgotPasswordEmailer, @Value("${cognito.forgotPassword.tokenValid}") Long forgotTokenValidInHours) {
+            CognitoForgotPasswordEmailer cognitoForgotPasswordEmailer, CognitoPasswordChangedEmailer cognitoPasswordChangedEmailer,
+            @Value("${cognito.forgotPassword.tokenValid}") Long forgotTokenValidInHours) {
 
         this.cognitoApiWrapper = cognitoApiWrapper;
         this.cognitoForgotPasswordEmailer = cognitoForgotPasswordEmailer;
+        this.cognitoPasswordChangedEmailer = cognitoPasswordChangedEmailer;
         this.cognitoForgotPasswordDAO = cognitoForgotPasswordDAO;
         this.forgotTokenValidInHours = forgotTokenValidInHours;
     }
@@ -45,7 +50,7 @@ public class CognitoPasswordManager {
      }
 
     @Transactional
-    public void setForgottenPassword(UUID forgotPasswordToken, String password) throws ValidationException {
+    public void setForgottenPassword(UUID forgotPasswordToken, String password) throws ValidationException, EmailNotSentException {
         CognitoForgotPassword forgotPassword = cognitoForgotPasswordDAO.getByToken(forgotPasswordToken);
         if (forgotPassword == null) {
             throw new ValidationException("Forgot Password Token is not valid.");
@@ -55,7 +60,20 @@ public class CognitoPasswordManager {
             throw new ValidationException("Forgot Password Token has expired.");
         }
 
-        cognitoApiWrapper.setUserPassword(forgotPassword.getEmail(), password);
+        cognitoApiWrapper.setUserPassword(forgotPassword.getEmail(), password, true);
+        cognitoPasswordChangedEmailer.sendEmail(forgotPassword.getEmail());
+    }
+
+
+    @Transactional
+    public void setPassword(String password, String confirmPassword) throws ValidationException, EmailNotSentException, UserRetrievalException {
+        if (!password.equals(confirmPassword)) {
+            throw new ValidationException("New password and password confirmation do not match");
+        }
+
+        User user = cognitoApiWrapper.getUserInfo(AuthUtil.getCurrentUser().getCognitoId());
+        cognitoApiWrapper.setUserPassword(user.getEmail(), password, true);
+        cognitoPasswordChangedEmailer.sendEmail(user.getEmail());
     }
 
     private CognitoForgotPassword generateForgotPassword(String email) {

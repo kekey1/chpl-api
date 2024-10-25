@@ -1,5 +1,49 @@
 # Release Notes
 
+## Version 47.1.0
+_14 October 2024_
+
+### Features
+* Update Service Based URL List tests to support URLs where content-length header does not exist
+* Do not email disabled users in developer messaging
+* Add endpoints to get data for Surveillance Summary Statistics report
+* Add job to force all Cognito users to change password
+
+### Bug Fixes
+* Eliminate extra spaces in contact info during create/update
+* Normalize spaces for insert/update to address and contact
+
+---
+
+## Version 47.0.0
+_30 September 2024_
+
+### Breaking Change
+* Remove ageRangeId, educationTypeId fields from SED
+
+### Features
+* Add change password functionality for Cognito Users
+* Add endpoints for Developer Statistics report
+* Add cols for all criteria available to edit in "Current CSV" file
+* Create /activity/search endpoint
+* Create one-time job that updates SED friendly IDs
+* Combine Conformance Methods warnings into one message
+* Deprecate 'uniqueId', add 'friendlyId' to tasks and participants
+
+---
+
+## Version 46.3.0
+_16 September 2024_
+
+### Features
+* Send "Password Changed" email to Cognito user after successful password reset using "Forgot Password" functionality
+* All developers with a Service Base URL should show in report, regardless if URL is the same as another developer
+* Implement token refresh for Cognito users
+* Create CSV file with all listing data populated
+* Create endpoint certified_products/id/download
+
+---
+
 ## Version 46.2.0
 _3 September 2024_
 

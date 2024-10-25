@@ -105,7 +105,7 @@ public class ListingCsvDataWriter {
         csvDataMatrix[0][CHPL_PRODUCT_NUMBER_COL] = listing.getChplProductNumber();
         csvDataMatrix[0][DEVELOPER_NAME_COL] = listing.getDeveloper().getName();
         csvDataMatrix[0][PRODUCT_NAME_COL] = listing.getProduct().getName();
-        csvDataMatrix[0][VERSION_NAME_COL] = listing.getVersion().getVersion();
+        csvDataMatrix[0][VERSION_NAME_COL] = forceExcelToInterpretAsText(listing.getVersion().getVersion());
         addMeasureData(csvDataMatrix, listing.getMeasures());
         csvDataMatrix[0][ACB_CERTIFICATION_ID_COL] = listing.getAcbCertificationId();
         csvDataMatrix[0][ACB_NAME_COL] = listing.getCertifyingBody().get(CertifiedProductSearchDetails.ACB_NAME_KEY).toString();
@@ -128,7 +128,7 @@ public class ListingCsvDataWriter {
         csvDataMatrix[0][SED_TESTING_DATE_COL] = listing.getSedTestingEndDay() != null ? dateFormat.format(DateUtil.toDate(listing.getSedTestingEndDay())) : "";
         addParticipants(csvDataMatrix, listing.getSed());
         addTasks(csvDataMatrix, listing.getSed());
-        addCertificationResults(csvDataMatrix, listing.getCertificationResults(), listing.getSed());
+        addCertificationResults(csvDataMatrix, getAllAvailableCriteriaAsCertResults(listing), listing.getSed());
 
         List<List<String>> records = new ArrayList<List<String>>();
         for (int i = 0; i < csvDataMatrix.length; i++) {
@@ -138,6 +138,36 @@ public class ListingCsvDataWriter {
             }
         }
         return records;
+    }
+
+    private List<CertificationResult> getAllAvailableCriteriaAsCertResults(CertifiedProductSearchDetails listing) {
+        List<CertificationCriterion> allCriteriaAvailableToListing = criteriaManager.getCriteriaAvailableToListing(listing);
+        List<CertificationResult> allAvailableCriteriaAsCertResults = new ArrayList<CertificationResult>();
+        allCriteriaAvailableToListing.stream()
+            .forEach(criterion -> {
+                if (isAttested(listing, criterion)) {
+                    allAvailableCriteriaAsCertResults.add(getCertResult(listing, criterion));
+                } else {
+                    allAvailableCriteriaAsCertResults.add(CertificationResult.builder()
+                            .success(false)
+                            .criterion(criterion)
+                            .build());
+                }
+            });
+        return allAvailableCriteriaAsCertResults;
+    }
+
+    private boolean isAttested(CertifiedProductSearchDetails listing, CertificationCriterion criterion) {
+        CertificationResult certResult = listing.getCertificationResults().stream()
+                .filter(cr -> cr.getCriterion().getId().equals(criterion.getId()))
+                .findAny().orElse(null);
+        return certResult != null && BooleanUtils.isTrue(certResult.getSuccess());
+    }
+
+    private CertificationResult getCertResult(CertifiedProductSearchDetails listing, CertificationCriterion criterion) {
+        return listing.getCertificationResults().stream()
+                .filter(cr -> cr.getCriterion().getId().equals(criterion.getId()))
+                .findAny().orElse(null);
     }
 
     private int getNumberOfRows(CertifiedProductSearchDetails listing) {
@@ -373,16 +403,15 @@ public class ListingCsvDataWriter {
         for (int i = 0; i < testParticipants.size(); i++) {
             TestParticipant tp = testParticipants.get(i);
             int col = PARTICIPANT_START_COL;
-            //TODO: change this to use the friendlyID when available
-            if (StringUtils.isEmpty(tp.getUniqueId())) {
-                tp.setUniqueId("TP" + (i + 1));
+            if (StringUtils.isEmpty(tp.getFriendlyId())) {
+                tp.setFriendlyId("CHPL-PARTICIPANT-" + (i + 1));
                 //copy the unique id to all test participant objects that have this same database id
                 sed.getTestTasks().stream()
                     .flatMap(tt -> tt.getTestParticipants().stream())
                     .filter(ttParticipant -> ttParticipant.getId().equals(tp.getId()))
-                    .forEach(ttParticipant -> ttParticipant.setUniqueId(tp.getUniqueId()));
+                    .forEach(ttParticipant -> ttParticipant.setFriendlyId(tp.getFriendlyId()));
             }
-            csvDataMatrix[i][col++] = tp.getUniqueId();
+            csvDataMatrix[i][col++] = tp.getFriendlyId();
             csvDataMatrix[i][col++] = tp.getGender();
             csvDataMatrix[i][col++] = tp.getAge() != null ? tp.getAge().getName() : "";
             csvDataMatrix[i][col++] = tp.getEducationType() != null ? tp.getEducationType().getName() : "";
@@ -402,26 +431,24 @@ public class ListingCsvDataWriter {
         for (int i = 0; i < testTasks.size(); i++) {
             TestTask task = testTasks.get(i);
             int col = TASK_START_COL;
-            //TODO: we need the friendly ID available here from the other ticket
-            //so maybe this is blocked eventually?
-            if (StringUtils.isEmpty(task.getUniqueId())) {
-                task.setUniqueId("TASK" + (i + 1));
+            if (StringUtils.isEmpty(task.getFriendlyId())) {
+                task.setFriendlyId("CHPL-TASK-" + (i + 1));
             }
-            csvDataMatrix[i][col++] = task.getUniqueId();
+            csvDataMatrix[i][col++] = task.getFriendlyId();
             csvDataMatrix[i][col++] = task.getDescription();
-            csvDataMatrix[i][col++] = task.getTaskSuccessAverage().toString();
-            csvDataMatrix[i][col++] = task.getTaskSuccessStddev().toString();
-            csvDataMatrix[i][col++] = task.getTaskPathDeviationObserved().toString();
-            csvDataMatrix[i][col++] = task.getTaskPathDeviationOptimal().toString();
-            csvDataMatrix[i][col++] = task.getTaskTimeAvg().toString();
-            csvDataMatrix[i][col++] = task.getTaskTimeStddev().toString();
-            csvDataMatrix[i][col++] = task.getTaskTimeDeviationObservedAvg().toString();
-            csvDataMatrix[i][col++] = task.getTaskTimeDeviationOptimalAvg().toString();
-            csvDataMatrix[i][col++] = task.getTaskErrors().toString();
-            csvDataMatrix[i][col++] = task.getTaskErrorsStddev().toString();
+            csvDataMatrix[i][col++] = forceExcelToInterpretAsText(task.getTaskSuccessAverage().toString());
+            csvDataMatrix[i][col++] = forceExcelToInterpretAsText(task.getTaskSuccessStddev().toString());
+            csvDataMatrix[i][col++] = forceExcelToInterpretAsText(task.getTaskPathDeviationObserved().toString());
+            csvDataMatrix[i][col++] = forceExcelToInterpretAsText(task.getTaskPathDeviationOptimal().toString());
+            csvDataMatrix[i][col++] = forceExcelToInterpretAsText(task.getTaskTimeAvg().toString());
+            csvDataMatrix[i][col++] = forceExcelToInterpretAsText(task.getTaskTimeStddev().toString());
+            csvDataMatrix[i][col++] = forceExcelToInterpretAsText(task.getTaskTimeDeviationObservedAvg().toString());
+            csvDataMatrix[i][col++] = forceExcelToInterpretAsText(task.getTaskTimeDeviationOptimalAvg().toString());
+            csvDataMatrix[i][col++] = forceExcelToInterpretAsText(task.getTaskErrors().toString());
+            csvDataMatrix[i][col++] = forceExcelToInterpretAsText(task.getTaskErrorsStddev().toString());
             csvDataMatrix[i][col++] = task.getTaskRatingScale();
-            csvDataMatrix[i][col++] = task.getTaskRating().toString();
-            csvDataMatrix[i][col++] = task.getTaskRatingStddev().toString();
+            csvDataMatrix[i][col++] = forceExcelToInterpretAsText(task.getTaskRating().toString());
+            csvDataMatrix[i][col++] = forceExcelToInterpretAsText(task.getTaskRatingStddev().toString());
         }
     }
 
@@ -436,7 +463,7 @@ public class ListingCsvDataWriter {
 
     private int addCertificationResult(String[][] csvDataMatrix, CertificationResult certResult,
             CertifiedProductSed sed, int currCol) {
-        csvDataMatrix[0][currCol++] = "1";
+        csvDataMatrix[0][currCol++] = certResult.getSuccess() ? "1" : "";
 
         CertificationCriterion criterion = certResult.getCriterion();
         CertificationCriterionWithAttributes criterionWithAttributes = criteriaManager.getAllWithAttributes().stream()
@@ -482,11 +509,12 @@ public class ListingCsvDataWriter {
                     csvDataMatrix[i][additionalSoftwareCol++] = !StringUtils.isEmpty(as.getCertifiedProductNumber()) ? as.getCertifiedProductNumber() : "";
                     csvDataMatrix[i][additionalSoftwareCol++] = !StringUtils.isEmpty(as.getCertifiedProductNumber()) ? as.getGrouping() : "";
                     csvDataMatrix[i][additionalSoftwareCol++] = !StringUtils.isEmpty(as.getName()) ? as.getName() : "";
-                    csvDataMatrix[i][additionalSoftwareCol++] = !StringUtils.isEmpty(as.getVersion()) ? as.getVersion() : "";
+                    csvDataMatrix[i][additionalSoftwareCol++] = !StringUtils.isEmpty(as.getVersion())
+                            ? forceExcelToInterpretAsText(as.getVersion()) : "";
                     csvDataMatrix[i][additionalSoftwareCol++] = !StringUtils.isEmpty(as.getName()) ? as.getGrouping() : "";
                 }
             } else {
-                csvDataMatrix[0][currCol++] = "0";
+                csvDataMatrix[0][currCol++] = certResult.getSuccess() ? "0" : "";
             }
             currCol += ADDITIONAL_SOFTWARE_COL_COUNT;
         }
@@ -531,7 +559,8 @@ public class ListingCsvDataWriter {
                     int conformanceMethodCol = currCol;
                     CertificationResultConformanceMethod conformanceMethod = certResult.getConformanceMethods().get(i);
                     csvDataMatrix[i][conformanceMethodCol++] = conformanceMethod.getConformanceMethod().getName();
-                    csvDataMatrix[i][conformanceMethodCol++] = conformanceMethod.getConformanceMethodVersion() != null ? conformanceMethod.getConformanceMethodVersion() : "";
+                    csvDataMatrix[i][conformanceMethodCol++] = conformanceMethod.getConformanceMethodVersion() != null
+                            ? forceExcelToInterpretAsText(conformanceMethod.getConformanceMethodVersion()) : "";
                 }
             }
             currCol += 2;
@@ -588,7 +617,8 @@ public class ListingCsvDataWriter {
     private int addGap(String[][] csvDataMatrix, CertificationResult certResult,
             CertificationCriterionWithAttributes criterionWithAttributes, int currCol) {
         if (criterionWithAttributes.getAttributes().isGap()) {
-            csvDataMatrix[0][currCol++] = BooleanUtils.isTrue(certResult.getGap()) ? "1" : "0";
+            csvDataMatrix[0][currCol++] = BooleanUtils.isTrue(certResult.getGap()) ? "1"
+                    : (certResult.getSuccess() ? "0" : "");
         }
         return currCol;
     }
@@ -599,7 +629,11 @@ public class ListingCsvDataWriter {
             if (!CollectionUtils.isEmpty(certResult.getOptionalStandards())) {
                 for (int i = 0; i < certResult.getOptionalStandards().size(); i++) {
                     CertificationResultOptionalStandard optionalStandard = certResult.getOptionalStandards().get(i);
-                    csvDataMatrix[i][currCol] = optionalStandard.getOptionalStandard().getCitation();
+                    if (!StringUtils.isEmpty(optionalStandard.getOptionalStandard().getCitation())) {
+                        csvDataMatrix[i][currCol] = optionalStandard.getOptionalStandard().getCitation();
+                    } else if (!StringUtils.isEmpty(optionalStandard.getOptionalStandard().getDisplayValue())) {
+                        csvDataMatrix[i][currCol] = optionalStandard.getOptionalStandard().getDisplayValue();
+                    }
                 }
             }
             currCol++;
@@ -642,11 +676,9 @@ public class ListingCsvDataWriter {
                 for (int i = 0; i < testTasks.size(); i++) {
                     int sedTestingCol = currCol;
                     TestTask testTask = testTasks.get(i);
-                    //TODO: this needs converted to the friendly ID
-                    csvDataMatrix[i][sedTestingCol++] = testTask.getUniqueId();
+                    csvDataMatrix[i][sedTestingCol++] = testTask.getFriendlyId();
                     String participants = testTask.getTestParticipants().stream()
-                         //TODO: this needs converted to the friendly ID
-                        .map(participant -> participant.getUniqueId())
+                        .map(participant -> participant.getFriendlyId())
                         .collect(Collectors.joining(";"));
                     csvDataMatrix[i][sedTestingCol++] = participants;
                 }
@@ -722,7 +754,8 @@ public class ListingCsvDataWriter {
                     int testDataCol = currCol;
                     CertificationResultTestData testData = certResult.getTestDataUsed().get(i);
                     csvDataMatrix[i][testDataCol++] = testData.getTestData().getName();
-                    csvDataMatrix[i][testDataCol++] = testData.getVersion() != null ? testData.getVersion() : "";
+                    csvDataMatrix[i][testDataCol++] = testData.getVersion() != null
+                            ? forceExcelToInterpretAsText(testData.getVersion()) : "";
                     csvDataMatrix[i][testDataCol++] = !StringUtils.isEmpty(testData.getAlteration()) ? "1" : "0";
                     csvDataMatrix[i][testDataCol++] = testData.getAlteration() != null ? testData.getAlteration() : "";
                 }
@@ -740,7 +773,8 @@ public class ListingCsvDataWriter {
                     int testProcedureCol = currCol;
                     CertificationResultTestProcedure testProcedure = certResult.getTestProcedures().get(i);
                     csvDataMatrix[i][testProcedureCol++] = testProcedure.getTestProcedure().getName();
-                    csvDataMatrix[i][testProcedureCol++] = testProcedure.getTestProcedureVersion() != null ? testProcedure.getTestProcedureVersion() : "";
+                    csvDataMatrix[i][testProcedureCol++] = testProcedure.getTestProcedureVersion() != null
+                            ? forceExcelToInterpretAsText(testProcedure.getTestProcedureVersion()) : "";
                 }
             }
             currCol += 2;
@@ -756,7 +790,7 @@ public class ListingCsvDataWriter {
                     int testToolCol = currCol;
                     CertificationResultTestTool testTool = certResult.getTestToolsUsed().get(i);
                     csvDataMatrix[i][testToolCol++] = testTool.getTestTool().getValue();
-                    csvDataMatrix[i][testToolCol++] = testTool.getVersion() != null ? testTool.getVersion() : "";
+                    csvDataMatrix[i][testToolCol++] = testTool.getVersion() != null ? forceExcelToInterpretAsText(testTool.getVersion()) : "";
                 }
             }
             currCol += 2;
@@ -770,5 +804,9 @@ public class ListingCsvDataWriter {
             csvDataMatrix[0][currCol++] = certResult.getUseCases() != null ? certResult.getUseCases() : "";
         }
         return currCol;
+    }
+
+    private String forceExcelToInterpretAsText(String value) {
+        return "\t" + value + "";
     }
 }
