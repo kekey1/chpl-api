@@ -452,6 +452,14 @@
         </JsonLayout>
     </Console>
 
+    <Console name="categorizeTestTasksJobJson" target="SYSTEM_OUT">
+        <JsonLayout compact="true" eventEol="true" properties="true" stacktraceAsString="true">
+            <KeyValuePair key="service" value="categorizeTestTasksJob" />
+            <KeyValuePair key="dd.trace_id" value="%X{dd.trace_id}" />
+            <KeyValuePair key="dd.span_id" value="%X{dd.span_id}" />
+        </JsonLayout>
+    </Console>
+
     <Console name="criteriaMigrationReportCreatorJobJson" target="SYSTEM_OUT">
         <JsonLayout compact="true" eventEol="true" properties="true" stacktraceAsString="true">
             <KeyValuePair key="service" value="criteriaMigrationReportCreatorJob" />
@@ -459,7 +467,7 @@
             <KeyValuePair key="dd.span_id" value="%X{dd.span_id}" />
         </JsonLayout>
     </Console>
-    
+
     <Console name="cognitoMassRequirePasswordChangeJobJson" target="SYSTEM_OUT">
         <JsonLayout compact="true" eventEol="true" properties="true" stacktraceAsString="true">
             <KeyValuePair key="service" value="cognitoMassRequirePasswordChangeJob" />

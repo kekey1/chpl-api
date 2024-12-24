@@ -250,6 +250,10 @@
         <AppenderRef ref="updateCurrentCertificationStatusJob" />
         <AppenderRef ref="updateCurrentCertificationStatusJobJson" />
     </Logger>
+    <Logger name="categorizeTestTasksJobLogger" level="INFO" additivity="false">
+        <AppenderRef ref="categorizeTestTasksJob" />
+        <AppenderRef ref="categorizeTestTasksJobJson" />
+    </Logger>
     <Logger name="criteriaMigrationReportCreatorJobLogger" level="INFO" additivity="false">
         <AppenderRef ref="criteriaMigrationReportCreatorJob" />
         <AppenderRef ref="criteriaMigrationReportCreatorJobJson" />

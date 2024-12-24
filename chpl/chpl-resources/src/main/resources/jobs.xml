@@ -896,6 +896,15 @@
         </job>
 
         <job>
+            <name>categorizeTestTasksJob</name>
+            <group>systemJobs</group>
+            <description>Categorize Test Tasks Job</description>
+            <job-class>gov.healthit.chpl.scheduler.job.sed.CategorizeTestTasksJob</job-class>
+            <durability>true</durability>
+            <recover>false</recover>
+        </job>
+
+        <job>
             <name>criteriaMigrationReportCreatorJob</name>
             <group>systemJobs</group>
             <description>Criteria Migration Report Creator Job</description>
@@ -903,7 +912,7 @@
             <durability>true</durability>
             <recover>false</recover>
         </job>
-        
+
         <job>
             <name>cognitoMassRequirePasswordChangeJob</name>
             <group>systemJobs</group>
@@ -912,7 +921,7 @@
             <durability>true</durability>
             <recover>false</recover>
         </job>
-            
+
         <job>
             <name>updateSedFriendlyIdsJob</name>
             <group>systemJobs</group>
@@ -921,7 +930,7 @@
             <durability>true</durability>
             <recover>false</recover>
         </job>
-        
+
         <job>
             <name>fixDatadogUrlUptimeAssertionsJob</name>
             <group>systemJobs</group>

@@ -32,6 +32,7 @@
       <redisson.version>3.22.0</redisson.version>
       <ff4j.store.redis.version>2.0.0</ff4j.store.redis.version>
       <org.springdoc.version>2.5.0</org.springdoc.version>
+      <azure.ai.version>1.0.0-beta.5</azure.ai.version>
     </properties>
 
     <dependencies>
@@ -375,6 +376,13 @@
             <version>2.27.0</version>
         </dependency>
         
+        <!-- Azure OpenAI SDK -->
+        <dependency>
+            <groupId>com.azure</groupId>
+            <artifactId>azure-ai-openai</artifactId>
+            <version>${azure.ai.version}</version>
+        </dependency>
+
         <!-- jars provided by the system and not included in the packaged jar -->
         <dependency>
             <groupId>org.apache.tomcat</groupId>
