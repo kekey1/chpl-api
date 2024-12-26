@@ -896,12 +896,22 @@
         </job>
 
         <job>
-            <name>categorizeTestTasksJob</name>
-            <group>systemJobs</group>
-            <description>Categorize Test Tasks Job</description>
+            <name>SED Test Task Categorization Report</name>
+            <group>chplJobs</group>
+            <description>Categorize Test Tasks And Email Results</description>
             <job-class>gov.healthit.chpl.scheduler.job.sed.CategorizeTestTasksJob</job-class>
             <durability>true</durability>
             <recover>false</recover>
+            <job-data-map>
+                <entry>
+                    <key>authorities</key>
+                    <value>ROLE_ADMIN;ROLE_ONC;chpl-admin;chpl-onc</value>
+                </entry>
+                <entry>
+                    <key>email</key>
+                    <value></value>
+                </entry>
+            </job-data-map>
         </job>
 
         <job>
