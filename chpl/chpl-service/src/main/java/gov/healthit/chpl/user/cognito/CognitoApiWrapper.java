@@ -3,20 +3,26 @@ package gov.healthit.chpl.user.cognito;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Base64;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Component;
 
 import gov.healthit.chpl.CognitoSecretHash;
@@ -50,6 +56,8 @@ import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminCreate
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminDeleteUserRequest;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminDisableUserRequest;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminEnableUserRequest;
+import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminGetUserRequest;
+import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminGetUserResponse;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminInitiateAuthRequest;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminInitiateAuthResponse;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminListGroupsForUserRequest;
@@ -66,8 +74,6 @@ import software.amazon.awssdk.services.cognitoidentityprovider.model.ChallengeNa
 import software.amazon.awssdk.services.cognitoidentityprovider.model.GroupType;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.ListUsersInGroupRequest;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.ListUsersInGroupResponse;
-import software.amazon.awssdk.services.cognitoidentityprovider.model.ListUsersRequest;
-import software.amazon.awssdk.services.cognitoidentityprovider.model.ListUsersResponse;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.MessageActionType;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.UserType;
 
@@ -97,9 +103,7 @@ public class CognitoApiWrapper {
         this.userPoolClientSecret = userPoolClientSecret;
         this.certificationBodyDAO = certificationBodyDAO;
         this.developerDAO = developerDAO;
-
     }
-
 
     public AuthenticationResultType authenticate(LoginCredentials credentials) throws CognitoAuthenticationChallengeException {
         String secretHash = CognitoSecretHash.calculateSecretHash(clientId, userPoolClientSecret, credentials.getUserName());
@@ -139,7 +143,6 @@ public class CognitoApiWrapper {
         }
     }
 
-
     public AuthenticationResultType respondToNewPasswordRequiredChallenge(CognitoNewPasswordRequiredRequest newPassworRequiredRequest) {
         AdminRespondToAuthChallengeRequest request = AdminRespondToAuthChallengeRequest.builder()
                 .userPoolId(userPoolId)
@@ -165,39 +168,53 @@ public class CognitoApiWrapper {
         }
     }
 
-    @Cacheable(CacheNames.COGNITO_USERS)
+    @Cacheable(value = CacheNames.COGNITO_USERS_BY_UUID, unless = "#result == null")
     public User getUserInfo(UUID cognitoId) throws UserRetrievalException {
-        ListUsersResponse response = cognitoClient.listUsers(ListUsersRequest.builder()
+        AdminGetUserRequest request = AdminGetUserRequest.builder()
                 .userPoolId(userPoolId)
-                .filter("sub = \"" + cognitoId.toString() + "\"")
-                .limit(1)
-                .build());
+                .username(cognitoId.toString())
+                .build();
 
-        if (response.users().size() > 0) {
-            String email = getUserAttribute(response.users().get(0).attributes(), "email").value();
-            List<GroupType> userGroups = getGroupsForUser(email);
-            if (doesGroupMatchCurrentEnvironment(userGroups)) {
-                return createUserFromUserType(response.users().get(0));
+        try {
+            AdminGetUserResponse response = cognitoClient.adminGetUser(request);
+            if (response == null || response.sdkHttpResponse() == null || !response.sdkHttpResponse().isSuccessful()) {
+                return null;
             }
+            return createUserFromGetUserResponse(response);
+        } catch (Exception e) {
+            return null;
         }
-        return null;
-
     }
 
+    @Cacheable(value = CacheNames.COGNITO_USERS_BY_EMAIL, unless = "#result == null")
     public User getUserInfo(String email) throws UserRetrievalException {
-        ListUsersResponse response = cognitoClient.listUsers(ListUsersRequest.builder()
+        AdminGetUserRequest request = AdminGetUserRequest.builder()
                 .userPoolId(userPoolId)
-                .filter("email = \"" + email + "\"")
-                .limit(1)
-                .build());
-
-        if (response.users().size() > 0) {
-            List<GroupType> userGroups = getGroupsForUser(email);
-            if (doesGroupMatchCurrentEnvironment(userGroups)) {
-                return createUserFromUserType(response.users().get(0));
+                .username(email)
+                .build();
+        try {
+            AdminGetUserResponse response = cognitoClient.adminGetUser(request);
+            if (response == null || response.sdkHttpResponse() == null || !response.sdkHttpResponse().isSuccessful()) {
+                return null;
             }
+            return createUserFromGetUserResponse(response);
+        } catch (Exception e) {
+            return null;
         }
-        return null;
+    }
+
+    @CachePut(CacheNames.COGNITO_USERS_BY_UUID)
+    public User getUserNoCache(UUID cognitoId) throws UserRetrievalException {
+        AdminGetUserRequest request = AdminGetUserRequest.builder()
+                .userPoolId(userPoolId)
+                .username(cognitoId.toString())
+                .build();
+
+        AdminGetUserResponse response = cognitoClient.adminGetUser(request);
+        if (response == null || response.sdkHttpResponse() == null || !response.sdkHttpResponse().isSuccessful()) {
+            return null;
+        }
+        return createUserFromGetUserResponse(response);
     }
 
     public CognitoCredentials createUser(CreateUserRequest userRequest) throws UserCreationException {
@@ -231,7 +248,7 @@ public class CognitoApiWrapper {
     public AuthenticationResultType refreshToken(String refreshToken, UUID cognitoId) {
         Map<String, String> authParams = new LinkedHashMap<String, String>();
         authParams.put("REFRESH_TOKEN", refreshToken);
-       authParams.put("SECRET_HASH", calculateSecretHash(cognitoId.toString()));
+        authParams.put("SECRET_HASH", calculateSecretHash(cognitoId.toString()));
 
         AdminInitiateAuthRequest authRequest = AdminInitiateAuthRequest.builder()
                 .authFlow(AuthFlowType.REFRESH_TOKEN_AUTH)
@@ -244,9 +261,7 @@ public class CognitoApiWrapper {
             AdminInitiateAuthResponse authResult = cognitoClient.adminInitiateAuth(authRequest);
             return authResult.authenticationResult();
         } catch (Exception e) {
-            //This is cluttering the logs when the SSO flag is on, and the user logs in using CHPL creds
-            //We might want to uncomment it when we move to only using Cognito creds
-            //LOGGER.error("Error refreshing token", e);
+            LOGGER.error("Error refreshing token", e);
             return null;
         }
     }
@@ -280,21 +295,30 @@ public class CognitoApiWrapper {
         return cognitoClient.adminAddUserToGroup(request);
     }
 
-    @CacheEvict(value = CacheNames.COGNITO_USERS, key = "#cognitoId")
-    public Boolean deleteUser(UUID cognitoId) {
+    // 'beforeInvocation = false allows us to use the return value to get the key to use for the eviction
+    @Caching(evict = {
+            @CacheEvict(value = CacheNames.COGNITO_USERS_BY_UUID, key = "#cognitoId"),
+            @CacheEvict(value = CacheNames.COGNITO_USERS_BY_EMAIL, key = "#result.email", beforeInvocation = false)
+    })
+    public User deleteUser(UUID cognitoId) {
         try {
+            User user = getUserInfo(cognitoId);
             AdminDeleteUserRequest request = AdminDeleteUserRequest.builder()
                     .userPoolId(userPoolId)
                     .username(cognitoId.toString())
                     .build();
             cognitoClient.adminDeleteUser(request);
-            return true;
+            return user;
         } catch (Exception e) {
-            return false;
+            return null;
         }
     }
 
     public List<User> getAllUsers() {
+        return getAllUsers(false);
+    }
+
+    public List<User> getAllUsers(boolean includeDisabled) {
         ListUsersInGroupRequest request = ListUsersInGroupRequest.builder()
                 .userPoolId(userPoolId)
                 .groupName(environmentGroupName)
@@ -321,7 +345,9 @@ public class CognitoApiWrapper {
                     .toList());
 
         }
-        return users;
+        return users.stream()
+                .filter(currUser -> includeDisabled ? true : currUser.getAccountEnabled())
+                .collect(Collectors.toList());
     }
 
     public void invalidateTokensForUser(String email) {
@@ -332,7 +358,10 @@ public class CognitoApiWrapper {
         cognitoClient.adminUserGlobalSignOut(request);
     }
 
-    @CacheEvict(value = CacheNames.COGNITO_USERS, key = "#user.cognitoId")
+    @Caching(evict = {
+            @CacheEvict(value = CacheNames.COGNITO_USERS_BY_UUID, key = "#user.cognitoId"),
+            @CacheEvict(value = CacheNames.COGNITO_USERS_BY_EMAIL, key = "#user.email")
+    })
     public void updateUser(User user) throws UserRetrievalException {
         List<AttributeType> attributes = new ArrayList<AttributeType>();
         attributes.add(AttributeType.builder().name("name").value(user.getFullName()).build());
@@ -348,7 +377,38 @@ public class CognitoApiWrapper {
         cognitoClient.adminUpdateUserAttributes(request);
     }
 
-    @CacheEvict(value = CacheNames.COGNITO_USERS, key = "#user.cognitoId")
+    @Caching(evict = {
+            @CacheEvict(value = CacheNames.COGNITO_USERS_BY_UUID, key = "#user.cognitoId"),
+            @CacheEvict(value = CacheNames.COGNITO_USERS_BY_EMAIL, key = "#user.email")
+    })
+    public void addOrgToUser(User user, Long orgId) throws UserRetrievalException {
+        List<AttributeType> attributes = new ArrayList<AttributeType>();
+        Set<Long> orgIds = CollectionUtils.isEmpty(user.getOrganizations())
+                ? new HashSet<Long>()
+                : user.getOrganizations().stream()
+                        .map(org -> org.getId())
+                        .collect(Collectors.toSet());
+        orgIds.add(orgId);
+
+        attributes.add(AttributeType.builder().name("custom:organizations").value(
+                orgIds.stream()
+                        .map(o -> o.toString())
+                        .collect(Collectors.joining(",")))
+                .build());
+
+        AdminUpdateUserAttributesRequest request = AdminUpdateUserAttributesRequest.builder()
+                .userPoolId(userPoolId)
+                .username(user.getCognitoId().toString())
+                .userAttributes(attributes)
+                .build();
+
+        cognitoClient.adminUpdateUserAttributes(request);
+    }
+
+    @Caching(evict = {
+            @CacheEvict(value = CacheNames.COGNITO_USERS_BY_UUID, key = "#user.cognitoId"),
+            @CacheEvict(value = CacheNames.COGNITO_USERS_BY_EMAIL, key = "#user.email")
+    })
     public void enableUser(User user) {
         AdminEnableUserRequest request = AdminEnableUserRequest.builder()
                 .userPoolId(userPoolId)
@@ -357,7 +417,10 @@ public class CognitoApiWrapper {
         cognitoClient.adminEnableUser(request);
     }
 
-    @CacheEvict(value = CacheNames.COGNITO_USERS, key = "#user.cognitoId")
+    @Caching(evict = {
+            @CacheEvict(value = CacheNames.COGNITO_USERS_BY_UUID, key = "#user.cognitoId"),
+            @CacheEvict(value = CacheNames.COGNITO_USERS_BY_EMAIL, key = "#user.email")
+    })
     public void disableUser(User user) {
         AdminDisableUserRequest request = AdminDisableUserRequest.builder()
                 .userPoolId(userPoolId)
@@ -436,6 +499,25 @@ public class CognitoApiWrapper {
         user.setRole(getRoleBasedOnFilteredGroups(getGroupsForUser(user.getEmail())));
 
         AttributeType orgIdsAttribute = getUserAttribute(userType.attributes(), "custom:organizations");
+        if (orgIdsAttribute != null && StringUtils.isNotEmpty(orgIdsAttribute.value())) {
+            user.setOrganizations(getOrganizations(user.getRole(), Stream.of(orgIdsAttribute.value().split(","))
+                .map(Long::valueOf)
+                .toList()));
+        }
+        return user;
+    }
+
+    private User createUserFromGetUserResponse(AdminGetUserResponse response) {
+        User user = new User();
+        user.setCognitoId(UUID.fromString(getUserAttribute(response.userAttributes(), "sub").value()));
+        user.setSubjectName(getUserAttribute(response.userAttributes(), "email").value());
+        user.setFullName(getUserAttribute(response.userAttributes(), "name").value());
+        user.setEmail(getUserAttribute(response.userAttributes(), "email").value());
+        user.setAccountEnabled(response.enabled());
+        user.setStatus(response.userStatusAsString());
+        user.setPasswordResetRequired(getForcePasswordReset(response.userAttributes()));
+        user.setRole(getRoleBasedOnFilteredGroups(getGroupsForUser(user.getEmail())));
+        AttributeType orgIdsAttribute = getUserAttribute(response.userAttributes(), "custom:organizations");
         if (orgIdsAttribute != null && StringUtils.isNotEmpty(orgIdsAttribute.value())) {
             user.setOrganizations(getOrganizations(user.getRole(), Stream.of(orgIdsAttribute.value().split(","))
                 .map(Long::valueOf)

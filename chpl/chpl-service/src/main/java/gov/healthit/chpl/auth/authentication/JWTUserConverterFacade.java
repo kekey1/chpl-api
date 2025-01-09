@@ -45,6 +45,7 @@ public class JWTUserConverterFacade implements JWTUserConverter {
                     //Set some values not avail in the Cognito Access Token that were avail in the CHPL token
                     User cognitoUser = cognitoApiWrapper.getUserInfo(user.getCognitoId());
                     user.setEmail(cognitoUser.getEmail());
+                    user.setSubjectName(cognitoUser.getEmail());
                     user.setFullName(cognitoUser.getFullName());
                 } catch (UserRetrievalException e) {
                     throw new JWTValidationException("Could not locate the Cognito user id");

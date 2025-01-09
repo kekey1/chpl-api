@@ -5,6 +5,7 @@ import java.util.OptionalInt;
 import java.util.stream.Stream;
 
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -103,7 +104,7 @@ public class ChplProductNumberUtil {
             String addlSoftwareCode, String certDateCode) {
 
         ChplProductNumberParts parts = new ChplProductNumberParts();
-        parts.setEditionCode(year);
+        parts.setEditionCode(!StringUtils.isEmpty(year) ? year : EDITION_CODE_DEFAULT);
         parts.setAtlCode(testingLab);
         parts.setAcbCode(certBody);
         parts.setDeveloperCode(vendorCode);
@@ -205,8 +206,19 @@ public class ChplProductNumberUtil {
         return hasIcsConflict;
     }
 
+    public String deriveTestingLabCodeFromListing(CertifiedProductSearchDetails listing) {
+        if (listing.getTestingLabs() != null && listing.getTestingLabs().size() > 1) {
+            return "99";
+        } else if (listing.getTestingLabs() != null) {
+            return listing.getTestingLabs().get(0).getTestingLab().getAtlCode();
+        }
+        return "";
+    }
+
     public String deriveIcsCodeFromListing(CertifiedProductSearchDetails listing) {
-        if (listing.getIcs() == null || !listing.getIcs().getInherits()
+        if (listing.getIcs() == null
+                || listing.getIcs().getInherits() == null
+                || BooleanUtils.isFalse(listing.getIcs().getInherits())
                 || CollectionUtils.isEmpty(listing.getIcs().getParents())) {
             return "00";
         }
@@ -276,7 +288,7 @@ public class ChplProductNumberUtil {
     }
 
     public List<String> getAllowedEditionCodes() {
-        return Stream.of("15").toList();
+        return Stream.of(EDITION_CODE_DEFAULT).toList();
     }
 
     private String[] splitUniqueIdParts(final String uniqueId) {
@@ -302,7 +314,9 @@ public class ChplProductNumberUtil {
     }
 
     private String formatEdition(final String year) {
-        if (year.length() == 2) {
+        if (StringUtils.isEmpty(year)) {
+            return EDITION_CODE_DEFAULT;
+        } else if (year.length() == 2) {
             return year;
         } else {
             return year.substring(2);

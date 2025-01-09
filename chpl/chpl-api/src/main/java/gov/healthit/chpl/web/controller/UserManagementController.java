@@ -5,8 +5,12 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.UUID;
 
+import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.StringUtils;
+import org.ff4j.FF4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
@@ -15,20 +19,23 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 
+import gov.healthit.chpl.FeatureList;
 import gov.healthit.chpl.auth.ChplAccountEmailNotConfirmedException;
 import gov.healthit.chpl.auth.ChplAccountStatusException;
-import gov.healthit.chpl.auth.user.AuthenticationSystem;
 import gov.healthit.chpl.auth.user.JWTAuthenticatedUser;
 import gov.healthit.chpl.domain.CreateUserFromInvitationRequest;
 import gov.healthit.chpl.domain.auth.Authority;
 import gov.healthit.chpl.domain.auth.AuthorizeCredentials;
+import gov.healthit.chpl.domain.auth.CognitoGroups;
 import gov.healthit.chpl.domain.auth.User;
 import gov.healthit.chpl.domain.auth.UserInvitation;
 import gov.healthit.chpl.domain.auth.UsersResponse;
@@ -49,16 +56,22 @@ import gov.healthit.chpl.manager.InvitationManager;
 import gov.healthit.chpl.manager.auth.AuthenticationManager;
 import gov.healthit.chpl.manager.auth.UserManager;
 import gov.healthit.chpl.user.cognito.CognitoUserManager;
+import gov.healthit.chpl.user.cognito.invitation.CognitoInvitationManager;
+import gov.healthit.chpl.user.cognito.invitation.CognitoUserInvitation;
 import gov.healthit.chpl.util.AuthUtil;
 import gov.healthit.chpl.util.ErrorMessageUtil;
 import gov.healthit.chpl.util.SwaggerSecurityRequirement;
 import gov.healthit.chpl.web.controller.annotation.DeprecatedApi;
 import gov.healthit.chpl.web.controller.annotation.DeprecatedApiResponseFields;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.Getter;
+import lombok.extern.log4j.Log4j2;
 
+@Log4j2
 @Tag(name = "users", description = "Allows management of users.")
 @RestController
 @RequestMapping("/users")
@@ -68,6 +81,8 @@ public class UserManagementController {
     private AuthenticationManager authenticationManager;
     private ErrorMessageUtil msgUtil;
     private CognitoUserManager cognitoUserManager;
+    private CognitoInvitationManager cognitoInvitationManager;
+    private FF4j ff4j;
 
     private long invitationLengthInDays;
     private long confirmationLengthInDays;
@@ -80,17 +95,174 @@ public class UserManagementController {
             @Value("${invitationLengthInDays}") Long invitationLengthDays,
             @Value("${confirmationLengthInDays}") Long confirmationLengthDays,
             @Value("${authorizationLengthInDays}") Long authorizationLengthInDays,
-            CognitoUserManager cognitoUserManager) {
+            CognitoUserManager cognitoUserManager,
+            CognitoInvitationManager cognitoInvitationManager,
+            FF4j ff4j) {
         this.userManager = userManager;
         this.invitationManager = invitationManager;
         this.authenticationManager = authenticationManager;
         this.msgUtil = errorMessageUtil;
         this.cognitoUserManager = cognitoUserManager;
+        this.cognitoInvitationManager = cognitoInvitationManager;
+        this.ff4j = ff4j;
 
         this.invitationLengthInDays = invitationLengthDays;
         this.confirmationLengthInDays = confirmationLengthDays;
         this.authorizationLengthInDays = authorizationLengthInDays;
     }
+
+    @Operation(summary = "Update the currently logged in user with an additional organization.",
+            description = "Update the currently logged in user with an additional organization.  This"
+                    + "is typically adding another developer or ONC-ACB to an existing user's list "
+                    + "of organizations they have access to.",
+            security = {
+                    @SecurityRequirement(name = SwaggerSecurityRequirement.API_KEY),
+                    @SecurityRequirement(name = SwaggerSecurityRequirement.BEARER)
+            })
+    @RequestMapping(value = "/authorize/{invitationToken}", method = RequestMethod.POST,
+            consumes = MediaType.APPLICATION_JSON_VALUE,
+            produces = "application/json; charset=utf-8")
+    public User addOrganizationToUser(@PathVariable("invitationToken") UUID invitationToken, @RequestHeader("authorization") String jwt)
+            throws UserRetrievalException, InvalidArgumentsException, ActivityException {
+
+        return cognitoUserManager.addOrganizationToUser(invitationToken, jwt.split(" ")[1]);
+    }
+
+    @Operation(summary = "View a specific user's details.",
+            description = "The logged in user must either be the user in the parameters, have ROLE_ADMIN, or "
+                    + "have ROLE_ACB.",
+                    security = {
+                            @SecurityRequirement(name = SwaggerSecurityRequirement.API_KEY),
+                            @SecurityRequirement(name = SwaggerSecurityRequirement.BEARER)
+                    })
+    @RequestMapping(value = "/{cognitoUserId}", method = RequestMethod.GET,
+            produces = "application/json; charset=utf-8")
+    public @ResponseBody User getUser(@PathVariable("cognitoUserId") UUID cognitoUserId) throws UserRetrievalException {
+        if (!ff4j.check(FeatureList.SSO)) {
+            throw new NotImplementedException("This method has not been implemented");
+        }
+
+        return cognitoUserManager.getUserInfo(cognitoUserId);
+    }
+
+    @Operation(summary = "Invite a user to the CHPL.",
+            description = "This request creates an invitation that is sent to the email address provided. "
+                    + "The recipient of this invitation can then choose to create a new account "
+                    + "or add the permissions contained within the invitation to an existing account "
+                    + "if they have one. Said another way, an invitation can be used to create or "
+                    + "modify CHPL user accounts." + "The correct order to call invitation requests is "
+                    + "the following: 1) POST /users/invitation 2) POST /users or POST users/authorize/{invitationToken}. "
+                    + "Security Restrictions: ROLE_ADMIN and ROLE_ONC can invite users to any organization.  "
+                    + "ROLE_ACB can add users to their own organization.",
+            security = {
+                    @SecurityRequirement(name = SwaggerSecurityRequirement.API_KEY),
+                    @SecurityRequirement(name = SwaggerSecurityRequirement.BEARER)
+            })
+    @RequestMapping(value = "/invitation", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE,
+            produces = "application/json; charset=utf-8")
+    public CognitoUserInvitation inviteUser(@RequestBody CognitoUserInvitation invitation)
+            throws UserCreationException, UserRetrievalException, UserPermissionRetrievalException, ValidationException {
+        if (!ff4j.check(FeatureList.SSO)) {
+            throw new NotImplementedException("This method has not been implemented");
+        }
+
+        invitation.setEmail(StringUtils.normalizeSpace(invitation.getEmail()));
+
+        CognitoUserInvitation createdInvitiation = null;
+        switch (invitation.getGroupName()) {
+            case CognitoGroups.CHPL_ADMIN:
+                createdInvitiation = cognitoInvitationManager.inviteAdminUser(invitation);
+                break;
+            case CognitoGroups.CHPL_ONC:
+                createdInvitiation = cognitoInvitationManager.inviteOncUser(invitation);
+                break;
+            case CognitoGroups.CHPL_ACB:
+                createdInvitiation = cognitoInvitationManager.inviteOncAcbUser(invitation);
+                break;
+            case CognitoGroups.CHPL_DEVELOPER:
+                createdInvitiation = cognitoInvitationManager.inviteDeveloperUser(invitation);
+                break;
+            case CognitoGroups.CHPL_CMS_STAFF:
+                createdInvitiation = cognitoInvitationManager.inviteCmsUser(invitation);
+                break;
+            default:
+                LOGGER.error("Invitation group name not handled: " + invitation.getGroupName());
+        }
+        return createdInvitiation;
+    }
+
+    @Operation(summary = "Create a new user account from an invitation.",
+            description = "An individual who has been invited to the CHPL has a special user key in their invitation email. "
+                    + "That user key along with all the information needed to create a new user's account "
+                    + "can be passed in here. The account is created but cannot be used until that user "
+                    + "confirms that their email address is valid. The correct order to call invitation requests is "
+                    + "the following: 1) POST /users/invitation 2) POST /users or POST users/authorize/{invitationToken}",
+            security = {
+                    @SecurityRequirement(name = SwaggerSecurityRequirement.API_KEY)
+            })
+    @RequestMapping(value = "", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE,
+            produces = "application/json; charset=utf-8")
+    public void addUser(@RequestBody CreateUserFromInvitationRequest userInfo) throws InvalidArgumentsException,
+        ValidationException, EmailNotSentException, UserRetrievalException, UserCreationException, ActivityException {
+        if (!ff4j.check(FeatureList.SSO)) {
+            throw new NotImplementedException("This method has not been implemented");
+        }
+        UUID token = null;
+
+        try {
+            token = UUID.fromString(userInfo.getHash());
+        } catch (IllegalArgumentException ex) {
+            LOGGER.error("Attempting to create a user from a invalid invitation token: " + userInfo.getHash(), ex);
+            throw new InvalidArgumentsException(msgUtil.getMessage("user.invitation.invalid",
+                    authorizationLengthInDays + "",
+                    authorizationLengthInDays == 1 ? "" : "s"));
+        }
+
+        try {
+            CognitoUserInvitation invitation = cognitoInvitationManager.getByToken(token);
+            if (invitation != null) {
+                cognitoUserManager.createUser(userInfo);
+            } else {
+                throw new InvalidArgumentsException(msgUtil.getMessage("user.invitation.invalid",
+                        authorizationLengthInDays + "",
+                        authorizationLengthInDays == 1 ? "" : "s"));
+            }
+        } catch (ValidationException ex) {
+            throw ex;
+        } catch (Exception ex) {
+            LOGGER.error("Error creating user from invitation.", ex);
+            throw new InvalidArgumentsException(msgUtil.getMessage("user.invitation.invalid",
+                    authorizationLengthInDays + "",
+                    authorizationLengthInDays == 1 ? "" : "s"));
+        } finally {
+            SecurityContextHolder.getContext().setAuthentication(null);
+        }
+    }
+
+    @Operation(summary = "Modify user information.", description = "",
+            security = {
+                    @SecurityRequirement(name = SwaggerSecurityRequirement.API_KEY),
+                    @SecurityRequirement(name = SwaggerSecurityRequirement.BEARER)
+            })
+    @RequestMapping(value = "/{cognitoUserId:^[0-9a-f]{8}\\b-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-\\b[0-9a-f]{12}$}",
+            method = RequestMethod.PUT,
+            consumes = MediaType.APPLICATION_JSON_VALUE,
+            produces = "application/json; charset=utf-8")
+    public User updateUserDetails(@RequestBody User userInfo, @PathVariable("cognitoUserId") UUID cognitoUserId)
+            throws ValidationException, UserRetrievalException, ActivityException {
+        if (!ff4j.check(FeatureList.SSO)) {
+            throw new NotImplementedException("This method has not been implemented");
+        }
+
+        if (!cognitoUserId.equals(userInfo.getCognitoId())) {
+            throw new ValidationException(msgUtil.getMessage("url.body.notMatch"));
+        }
+        return cognitoUserManager.updateUser(userInfo);
+    }
+
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 
     @Deprecated
     @DeprecatedApi(friendlyUrl = "/users/create",
@@ -124,7 +296,7 @@ public class UserManagementController {
 
         UserInvitation invitation = invitationManager.getByInvitationHash(userInfo.getHash());
         if (invitation == null || invitation.isOlderThan(invitationLengthInDays)) {
-            throw new ValidationException(msgUtil.getMessage("user.invitation.expired",
+            throw new ValidationException(msgUtil.getMessage("user.invitation.invalid",
                     invitationLengthInDays + "",
                     invitationLengthInDays == 1 ? "" : "s"));
         }
@@ -227,7 +399,7 @@ public class UserManagementController {
 
         UserInvitation invitation = invitationManager.getByInvitationHash(credentials.getHash());
         if (invitation == null || invitation.isOlderThan(authorizationLengthInDays)) {
-            throw new InvalidArgumentsException(msgUtil.getMessage("user.invitation.expired",
+            throw new InvalidArgumentsException(msgUtil.getMessage("user.invitation.invalid",
                     authorizationLengthInDays + "",
                     authorizationLengthInDays == 1 ? "" : "s"));
         }
@@ -305,7 +477,7 @@ public class UserManagementController {
                     @SecurityRequirement(name = SwaggerSecurityRequirement.API_KEY),
                     @SecurityRequirement(name = SwaggerSecurityRequirement.BEARER)
             })
-    @RequestMapping(value = "/{userId}", method = RequestMethod.PUT, consumes = MediaType.APPLICATION_JSON_VALUE,
+    @RequestMapping(value = "/{userId:^-?\\d+$}", method = RequestMethod.PUT, consumes = MediaType.APPLICATION_JSON_VALUE,
             produces = "application/json; charset=utf-8")
     public User updateUserDetails(@RequestBody User userInfo)
             throws UserRetrievalException, ValidationException, MultipleUserAccountsException, ActivityException {
@@ -346,11 +518,6 @@ public class UserManagementController {
         return new DeletedUser(true);
     }
 
-    @Deprecated
-    @DeprecatedApi(friendlyUrl = "/users",
-            removalDate = "2024-11-01",
-            message = "This endpoint is deprecated and will be removed in a future release. No replacement is currently available.")
-    @DeprecatedApiResponseFields(friendlyUrl = "/users", responseClass = User.class)
     @Operation(summary = "View users of the system.",
             description = "Security Restrictions: ROLE_ADMIN and ROLE_ONC can see all users.  ROLE_ACB "
                     + "and ROLE_CMS_STAFF can see themselves.",
@@ -360,12 +527,18 @@ public class UserManagementController {
             })
     @RequestMapping(value = "", method = RequestMethod.GET, produces = "application/json; charset=utf-8")
     @PreAuthorize("isAuthenticated()")
-    public @ResponseBody UsersResponse getUsers() {
+    public @ResponseBody UsersResponse getUsers(
+            @Parameter(description = "Whether to include users whose accounts have been marked as disabled. "
+                    + "Any string that can be evaluated as a boolean may be passed in (ex: true, false, off, on, yes, no). "
+                    + "The parameter only affects the response when called by an authenticated ADMIN or ONC user.",
+                allowEmptyValue = true, in = ParameterIn.QUERY, name = "includeDisabled")
+            @RequestParam(value = "includeDisabled", required = false, defaultValue = "false") String includeDisabledStr) {
+        boolean includeDisabled = StringUtils.isEmpty(includeDisabledStr) ? false : BooleanUtils.toBoolean(includeDisabledStr);
         List<User> users = null;
-        if (AuthUtil.getCurrentUser().getAuthenticationSystem().equals(AuthenticationSystem.COGNITO)) {
-            users = getAllCognitoUsers();
-        } else if (AuthUtil.getCurrentUser().getAuthenticationSystem().equals(AuthenticationSystem.CHPL)) {
-            users = getAllChplUsers();
+        if (ff4j.check(FeatureList.SSO)) {
+            users = getAllCognitoUsers(includeDisabled);
+        } else {
+            users = getAllChplUsers(includeDisabled);
         }
 
         UsersResponse response = new UsersResponse();
@@ -393,8 +566,8 @@ public class UserManagementController {
         return userManager.getUserInfo(id);
     }
 
-    private List<User> getAllChplUsers() {
-        List<UserDTO> userList = userManager.getAll();
+    private List<User> getAllChplUsers(Boolean includeDisabled) {
+        List<UserDTO> userList = userManager.getAll(includeDisabled);
         List<User> users = new ArrayList<User>(userList.size());
 
         for (UserDTO userDto : userList) {
@@ -404,8 +577,8 @@ public class UserManagementController {
         return users;
     }
 
-    private List<User> getAllCognitoUsers() {
-        return cognitoUserManager.getAll();
+    private List<User> getAllCognitoUsers(Boolean includeDisabled) {
+        return cognitoUserManager.getAll(includeDisabled);
     }
 
     private class DeletedUser {

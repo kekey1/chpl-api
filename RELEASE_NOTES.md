@@ -1,5 +1,95 @@
 # Release Notes
 
+## Version 47.7.0
+_6 January 2025_
+
+### Features
+* Add endpoints to retrieve data for the Developer Attestation PowerBI report
+* Allow changing of ATL using upload-to-update
+* Save activity for created and deleted invitations
+* Add job to update Service Base URL report items
+
+### Bug Fixes
+* Give ONC users ability to edit listing via upload
+
+---
+
+## Version 47.6.0
+_18 December 2024_
+
+### Features
+* Add endpoint to return data for Service Base URL List report
+* Allow existing user to be granted access to additional Organizations
+* Return generic msg if invitation token is bad
+* Create /developers/<id>/insights endpoint to fetch insights data
+
+### Bug Fixes
+* Add all required standards to listing as of cert day + current day
+* Give appropriate error if addt'l software group name too long
+* Give pending change request report user correct cognito group
+* Send API Key deletion warning if key was created and never used
+
+---
+
+## Version 47.5.0
+_9 December 2024_
+
+### Features
+* Add Standards to the Criteria Attribute Power BI report
+
+### Bug Fixes
+* Allow joining of developers with editionless listings
+
+---
+
+## Version 47.4.0
+_25 November 2024_
+
+### Features
+* Exclude 'Body too large to process' errors from Service Base URL Report
+* Add endpoints to support Summary Statistics - Product, Direct Review, Listing Reports
+* Add ability to "includeDisabled" to all calls that get users
+
+### Flagged Features
+* Save Activity when updating/creating Cognito Users
+* Update display of "disabled" Users
+
+---
+
+## Version 47.3.0
+_12 November 2024_
+
+### Features
+* Endpoint updates for HTI-1 – (a)(9) to (b)(11) report
+* Add hasUsers parameter to developer search endpoint
+* Add users without contact info to bottom of preview message
+* Give new Cognito users appropriate environment group access
+* Add warning about similarly named products on developer
+
+### Flagged Features
+* Update functionality for SSO flag
+
+---
+
+## Version 47.2.0
+_28 October 2024_
+
+### Features
+* Handle Cognito user attributes based on update user pool settings
+* Create endpoints to support Test Tool charts
+* Check URLs with chrome browser user-agent
+* Add complaintTypes to Complaints
+* Add endpoint to turn a CSV file into a listing details object
+
+### Bug Fixes
+* Display warning only for conformance methods being defaulted
+* Handle some CQM display issues
+** Show correct CQM title based on attested versions
+** Show latest CQM title in search filters
+** Display most recent CQM title for uploaded listings
+
+---
+
 ## Version 47.1.0
 _14 October 2024_
 

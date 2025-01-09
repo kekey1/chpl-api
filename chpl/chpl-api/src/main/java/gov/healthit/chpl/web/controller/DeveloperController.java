@@ -4,6 +4,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.NotImplementedException;
+import org.apache.commons.lang3.StringUtils;
+import org.ff4j.FF4j;
 import org.quartz.SchedulerException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
@@ -14,11 +18,13 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 
+import gov.healthit.chpl.FeatureList;
 import gov.healthit.chpl.attestation.domain.AttestationPeriodDeveloperException;
 import gov.healthit.chpl.attestation.manager.AttestationManager;
 import gov.healthit.chpl.caching.CacheNames;
@@ -40,6 +46,9 @@ import gov.healthit.chpl.exception.EntityRetrievalException;
 import gov.healthit.chpl.exception.InvalidArgumentsException;
 import gov.healthit.chpl.exception.JiraRequestFailedException;
 import gov.healthit.chpl.exception.ValidationException;
+import gov.healthit.chpl.insight.InsightRequestFailedException;
+import gov.healthit.chpl.insight.InsightService;
+import gov.healthit.chpl.insight.InsightSubmission;
 import gov.healthit.chpl.manager.CertifiedProductManager;
 import gov.healthit.chpl.manager.DeveloperManager;
 import gov.healthit.chpl.manager.UserPermissionsManager;
@@ -51,6 +60,8 @@ import gov.healthit.chpl.web.controller.annotation.DeprecatedApiResponseFields;
 import gov.healthit.chpl.web.controller.results.DeveloperAttestationSubmissionResults;
 import gov.healthit.chpl.web.controller.results.DeveloperResults;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.log4j.Log4j2;
@@ -65,23 +76,29 @@ public class DeveloperController {
     private ErrorMessageUtil msgUtil;
     private UserPermissionsManager userPermissionsManager;
     private AttestationManager attestationManager;
+    private InsightService insightsService;
     private DirectReviewCachingService directReviewService;
     private RealWorldTestingManager rwtManager;
+    private FF4j ff4j;
 
     @Autowired
     public DeveloperController(DeveloperManager developerManager,
             CertifiedProductManager cpManager,
             UserPermissionsManager userPermissionsManager,
             AttestationManager attestationManager,
+            InsightService insightsService,
             ErrorMessageUtil msgUtil,
             DirectReviewCachingService directReviewService,
-            RealWorldTestingManager rwtManager) {
+            RealWorldTestingManager rwtManager,
+            FF4j ff4j) {
         this.developerManager = developerManager;
         this.userPermissionsManager = userPermissionsManager;
         this.attestationManager = attestationManager;
+        this.insightsService = insightsService;
         this.msgUtil = msgUtil;
         this.directReviewService = directReviewService;
         this.rwtManager = rwtManager;
+        this.ff4j = ff4j;
     }
 
     @DeprecatedApiResponseFields(friendlyUrl = "/developers", httpMethod = "GET", responseClass = DeveloperResults.class)
@@ -133,6 +150,20 @@ public class DeveloperController {
             @PathVariable("developerId") Long developerId) throws JiraRequestFailedException {
         return new ResponseEntity<List<DirectReview>>(
                 directReviewService.getDirectReviews(developerId).getDirectReviews(), HttpStatus.OK);
+    }
+
+    @Operation(summary = "List Insight sumbissions for a developer.",
+            security = {
+                    @SecurityRequirement(name = SwaggerSecurityRequirement.API_KEY),
+                    @SecurityRequirement(name = SwaggerSecurityRequirement.BEARER)
+            })
+    @RequestMapping(value = "/{developerId}/insights", method = RequestMethod.GET, produces = "application/json; charset=utf-8")
+    public @ResponseBody ResponseEntity<List<InsightSubmission>> getInsights(@PathVariable("developerId") Long developerId)
+            throws InsightRequestFailedException, EntityRetrievalException {
+        if (!ff4j.check(FeatureList.INSIGHTS)) {
+            throw new NotImplementedException("This method has not been implemented");
+        }
+        return new ResponseEntity<List<InsightSubmission>>(insightsService.getInsightSubmissions(developerId), HttpStatus.OK);
     }
 
     @Operation(summary = "List all Real World Testing Plans URLs from active certificates for a developer.",
@@ -278,10 +309,15 @@ public class DeveloperController {
             })
     @RequestMapping(value = "/{developerId}/users", method = RequestMethod.GET,
             produces = "application/json; charset=utf-8")
-    public @ResponseBody UsersResponse getUsers(@PathVariable("developerId") Long developerId)
-            throws InvalidArgumentsException, EntityRetrievalException {
-
-        List<User> domainUsers = developerManager.getAllUsersOnDeveloper(developerId);
+    public @ResponseBody UsersResponse getUsers(@PathVariable("developerId") Long developerId,
+        @Parameter(description = "Whether to include users whose accounts have been marked as disabled. "
+                + "Any string that can be evaluated as a boolean may be passed in (ex: true, false, off, on, yes, no). "
+                + "The parameter only affects the response when called by an authenticated ADMIN or ONC user.",
+            allowEmptyValue = true, in = ParameterIn.QUERY, name = "includeDisabled")
+        @RequestParam(value = "includeDisabled", required = false, defaultValue = "false") String includeDisabled)
+    throws InvalidArgumentsException, EntityRetrievalException {
+        List<User> domainUsers = developerManager.getAllUsersOnDeveloper(developerId,
+                StringUtils.isEmpty(includeDisabled) ? false : BooleanUtils.toBoolean(includeDisabled));
         UsersResponse results = new UsersResponse();
         results.setUsers(domainUsers);
         return results;
