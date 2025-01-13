@@ -58,6 +58,7 @@ public class CategorizeTestTasksJob implements Job {
     @Autowired
     private ChplEmailFactory chplEmailFactory;
 
+    private CertificationCriterion a1, b2;
     private final CategoryStats stats = new CategoryStats();
     private int totalTokens = 0;
     private OpenAIClient openAiClient;
@@ -74,19 +75,22 @@ public class CategorizeTestTasksJob implements Job {
         //TODO: it might be nice to allow the user to enter the criterion number when scheduling the report
         //TODO: it might also be nice to give the user a big text area to enter the AI prompt
         //with several autofill type options in a dropdown
-        CertificationCriterion criterion = certificationCriterionService.get(Criteria2015.A_1);
+        a1 = certificationCriterionService.get(Criteria2015.A_1);
+        b2 = certificationCriterionService.get(Criteria2015.B_2_CURES);
+
+        CertificationCriterion criterion = b2;
 
         LOGGER.info("Getting task descriptions for " + Util.formatCriteriaNumber(criterion));
         List<String> taskDescriptions = sedDao.getUniqueTestTasksForCriterion(criterion.getId());
         LOGGER.info("Found {} descriptions to process", taskDescriptions.size());
 
         LOGGER.info("Asking OpenAI to categorize task descriptions for " + Util.formatCriteriaNumber(criterion));
-        List<String> taskCategories = processDescriptions(taskDescriptions);
+        List<String> taskCategories = processDescriptions(criterion, taskDescriptions);
         LOGGER.info("Completed categorizing task descriptions");
 
         try {
-            File results = writeToFile(taskDescriptions, taskCategories);
-            sendFileToUser(jobContext.getMergedJobDataMap().getString("email"), results);
+            File results = writeToFile(criterion, taskDescriptions, taskCategories);
+            sendFileToUser(criterion, jobContext.getMergedJobDataMap().getString("email"), results);
         } catch (Exception ex) {
             LOGGER.error("Unable to create file and/or send file to user", ex);
         }
@@ -100,7 +104,7 @@ public class CategorizeTestTasksJob implements Job {
             .buildClient();
     }
 
-    public List<String> processDescriptions(List<String> taskDescriptions) {
+    public List<String> processDescriptions(CertificationCriterion criterion, List<String> taskDescriptions) {
         List<String> allCategories = new ArrayList<>();
         try {
             // Process in batches
@@ -108,7 +112,7 @@ public class CategorizeTestTasksJob implements Job {
                 int end = Math.min(i + openAiConfigs.getBatchSize(), taskDescriptions.size());
                 List<String> batch = taskDescriptions.subList(i, end);
 
-                List<String> categories = categorizeBatch(batch, 0);
+                List<String> categories = categorizeBatch(criterion, batch, 0);
                 allCategories.addAll(categories);
 
                 // Log progress
@@ -133,10 +137,15 @@ public class CategorizeTestTasksJob implements Job {
         return allCategories;
     }
 
-    private List<String> categorizeBatch(List<String> descriptions, int retryCount) {
+    private List<String> categorizeBatch(CertificationCriterion criterion, List<String> descriptions, int retryCount) {
         try {
             LOGGER.info("Categorizing batch of descriptions: " + descriptions);
-            String prompt = buildPrompt(descriptions);
+            String prompt = null;
+            if (criterion.equals(a1)) {
+                prompt = buildA1Prompt(descriptions);
+            } else if (criterion.equals(b2)) {
+                prompt = buildB2Prompt(descriptions);
+            }
 
             ChatCompletions response = openAiClient.getChatCompletions(
                 openAiConfigs.getAzureOpenAiDeploymentName(),
@@ -171,7 +180,7 @@ public class CategorizeTestTasksJob implements Job {
                 } catch (InterruptedException ie) {
                     Thread.currentThread().interrupt();
                 }
-                return categorizeBatch(descriptions, retryCount + 1);
+                return categorizeBatch(criterion, descriptions, retryCount + 1);
             } else {
                 String errorMsg = String.format("Failed after %d attempts: %s: %s",
                         openAiConfigs.getMaxRetries(), e.getClass().getSimpleName(), e.getMessage());
@@ -181,7 +190,7 @@ public class CategorizeTestTasksJob implements Job {
         }
     }
 
-    private String buildPrompt(List<String> descriptions) {
+    private String buildA1Prompt(List<String> descriptions) {
         return """
             For each of the following SED task descriptions, categorize it into one of these categories:
             - 'record': for creating new medication orders
@@ -204,7 +213,34 @@ public class CategorizeTestTasksJob implements Job {
             .formatted(String.join("\n", descriptions));
     }
 
-    private File writeToFile(List<String> taskDescriptions, List<String> categories)
+    private String buildB2Prompt(List<String> descriptions) {
+        //TODO: Are "display" and "review" really the same category??
+        return """
+            For each of the following SED task descriptions, categorize it into one of these categories:
+
+            - 'patient matching ': for matching a received transition of care/referral summary to the correct patient
+            - 'display': for viewing or displaying clinical information
+            - 'review': for reviewing or accessing clinical information (including 'review' actions)
+            - 'validate': for validating clinical information
+            - 'incorporate': for incorporating clinical information
+            - 'create CCDA': for creating a CCDA or C-CDA
+            - 'multiple': when more than one category applies to the description
+            - 'unknown': when the description is unclear, unrelated, or too general
+
+            Rules for categorization:
+            1. Each description must be assigned exactly one category. If multiple categories could apply, use 'multiple'
+            2. If a description mentions multiple distinct actions (display/review/validate), use 'multiple'
+            3. Words like "view" or "display" should be treated as 'display'
+            4. Words like "review" or "access" should be treated as 'review'
+
+            Descriptions to categorize:
+            %s
+
+            For each description, reply with only the category name in lowercase."""
+            .formatted(String.join("\n", descriptions));
+    }
+
+    private File writeToFile(CertificationCriterion criterion, List<String> taskDescriptions, List<String> categories)
         throws IOException {
         File temp = File.createTempFile(reportFilename, ".csv");
         temp.deleteOnExit();
@@ -228,7 +264,7 @@ public class CategorizeTestTasksJob implements Job {
         return temp;
     }
 
-    private void sendFileToUser(String recipient, File attachment) {
+    private void sendFileToUser(CertificationCriterion criterion, String recipient, File attachment) {
         LOGGER.info("Sending email to {} ", recipient);
 
         try {
@@ -237,7 +273,7 @@ public class CategorizeTestTasksJob implements Job {
 
             chplEmailFactory.emailBuilder()
                 .recipients(recipients)
-                .subject("Test Task Categorization Results")
+                .subject(Util.formatCriteriaNumber(criterion) + " Test Task Categorization Results")
                 .htmlMessage("Please see attachment")
                 .fileAttachments(Stream.of(attachment).toList())
                 .sendEmail();
