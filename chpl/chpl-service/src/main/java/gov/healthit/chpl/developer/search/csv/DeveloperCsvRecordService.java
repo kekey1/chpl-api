@@ -53,9 +53,9 @@ public class DeveloperCsvRecordService {
         return devRecord;
     }
 
-    public List<String> getRecordWithUsers(DeveloperSearchResult dev, List<User> allDeveloperUsers) {
+    public List<String> getRecordWithUsers(DeveloperSearchResult dev, List<User> enabledDeveloperUsers) {
         List<String> devRecord = getRecord(dev);
-        List<User> developerUsers = allDeveloperUsers.stream()
+        List<User> developerUsers = enabledDeveloperUsers.stream()
                 .filter(devUser -> devUser.getOrganizations().stream()
                                 .filter(org -> org.getId().equals(dev.getId()))
                                 .findAny()
@@ -63,8 +63,17 @@ public class DeveloperCsvRecordService {
                 .collect(Collectors.toList());
         if (CollectionUtils.isEmpty(developerUsers)) {
             devRecord.add("");
+            devRecord.add("");
         } else {
             devRecord.add(formatUsers(developerUsers));
+            List<User> forcePasswordResetUsers = developerUsers.stream()
+                    .filter(devUser -> devUser.getPasswordResetRequired())
+                    .collect(Collectors.toList());
+            if (CollectionUtils.isEmpty(forcePasswordResetUsers)) {
+                devRecord.add("");
+            } else {
+                devRecord.add(formatUsers(forcePasswordResetUsers));
+            }
         }
         return devRecord;
     }

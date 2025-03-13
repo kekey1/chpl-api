@@ -23,7 +23,7 @@ public class DeveloperCsvHeadingService {
             "ONC-ACBs for All Listings",
             "Contact Name", "Contact Email", "Contact Phone Number",
             "Address", "City", "State", "Zipcode" };
-    public static final String[] AUTHENTICATED_DEVELOPER_HEADINGS = new String[] {"Users"};
+    public static final String[] AUTHENTICATED_DEVELOPER_HEADINGS = new String[] {"Users", "Users In FORCE_PASSWORD_RESET"};
     private AttestationPeriodService attestationPeriodService;
 
     @Autowired
