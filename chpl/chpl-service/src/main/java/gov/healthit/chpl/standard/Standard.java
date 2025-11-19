@@ -81,6 +81,21 @@ public class Standard implements Serializable {
         return end.isBefore(LocalDate.now());
     }
 
+    public Boolean isStarted(LocalDate checkDate) {
+        LocalDate start = startDay != null ? startDay : LocalDate.MIN;
+        return start.isEqual(LocalDate.now()) || start.isBefore(LocalDate.now());
+    }
+
+    public Boolean isStartedAsOf(LocalDate checkDate) {
+        LocalDate start = startDay != null ? startDay : LocalDate.MIN;
+        return start.isEqual(checkDate) || start.isBefore(checkDate);
+    }
+
+    public Boolean isRetiredAsOf(LocalDate checkDate) {
+        LocalDate end = endDay != null ? endDay : LocalDate.MAX;
+        return end.isBefore(checkDate);
+    }
+
     /*
      * TODO: OCD-4333 NEED THIS TEXT
      */

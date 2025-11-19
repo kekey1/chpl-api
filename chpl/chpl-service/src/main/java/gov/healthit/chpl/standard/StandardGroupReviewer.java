@@ -2,6 +2,7 @@ package gov.healthit.chpl.standard;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,12 +35,12 @@ public abstract class StandardGroupReviewer implements Reviewer {
         standardGroupService.getGroupedStandardsForCriteria(certResult.getCriterion(), validAsOfDate).entrySet().stream()
                 .filter(standardGroup -> standardGroup.getValue().size() >= 2)
                 .forEach(standardGroup -> {
-                    if (!doesAtLeastOneStandardForGroupExistForCriterion(standardGroup.getValue(), certResult)) {
+                    if (!doesAtLeastOneActiveStandardForGroupExistForCriterion(standardGroup.getValue(), certResult, validAsOfDate)) {
                         //Assume all of the active standards within the group have the same required day,
                         //and further assume that all grouped standards with the same required day will have
                         //the same extension end day. It is possible to set different values for these
                         //things using the UI or API but it is not a realistic scenario at this time.
-                        LocalDate extensionEndDay = standardGroup.getValue().get(0).getExtensionEndDay();
+                        LocalDate extensionEndDay = getExtensionEndDayBasedOnActiveStandards(standardGroup.getValue(), validAsOfDate);
                         if (allowsExtension()
                                 && extensionEndDay != null
                                 && validAsOfDate.isBefore(extensionEndDay)) {
@@ -56,10 +57,23 @@ public abstract class StandardGroupReviewer implements Reviewer {
                 });
     }
 
-    private boolean doesAtLeastOneStandardForGroupExistForCriterion(List<Standard> groupedStandards, CertificationResult certResult) {
+    private boolean doesAtLeastOneActiveStandardForGroupExistForCriterion(List<Standard> groupedStandards, CertificationResult certResult,
+            LocalDate validAsOfDate) {
         return groupedStandards.stream()
+                .filter(standardFromGroup -> standardFromGroup.isStartedAsOf(validAsOfDate) && !standardFromGroup.isRetiredAsOf(validAsOfDate))
                 .filter(standardFromGroup -> isStandardInList(standardFromGroup, certResult.getStandards().stream().map(certResultStd -> certResultStd.getStandard()).toList()))
                 .count() >= 1;
+    }
+
+    private LocalDate getExtensionEndDayBasedOnActiveStandards(List<Standard> standards, LocalDate validAsOfDate) {
+        Optional<Standard> startedStdWithExtension = standards.stream()
+            .filter(std -> std.isStartedAsOf(validAsOfDate))
+            .filter(std -> std.getExtensionEndDay() != null)
+            .findAny();
+        if (startedStdWithExtension.isPresent()) {
+            return startedStdWithExtension.get().getExtensionEndDay();
+        }
+        return null;
     }
 
     private boolean isStandardInList(Standard standardToFind, List<Standard> standard) {
