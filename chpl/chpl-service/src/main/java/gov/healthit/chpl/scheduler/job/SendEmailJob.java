@@ -272,7 +272,7 @@ public class SendEmailJob implements Job {
         IProgressCallback callback = new IProgressCallback() {
             @Override
             public void report(long current, long max) {
-                LOGGER.debug(
+                LOGGER.info(
                         String.format("Uploaded %d bytes of %d total bytes", current, max)
                     );
             }
