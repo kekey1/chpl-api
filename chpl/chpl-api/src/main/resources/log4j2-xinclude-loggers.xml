@@ -206,6 +206,10 @@
         <AppenderRef ref="developerAttestationCheckinReportJob" />
         <AppenderRef ref="developerAttestationCheckinReportJobJson" />
     </Logger>
+    <Logger name="rwtResultsChangeRequestReportCreatorJobLogger" level="INFO" additivity="false">
+        <AppenderRef ref="rwtResultsChangeRequestReportCreatorJob" />
+        <AppenderRef ref="rwtResultsChangeRequestReportCreatorJobJson" />
+    </Logger>
     <Logger name="messageDevelopersJobLogger" level="INFO" additivity="false">
         <AppenderRef ref="messageDevelopersJob" />
         <AppenderRef ref="messageDevelopersJobJson" />
