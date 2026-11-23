@@ -12,10 +12,12 @@ import jakarta.persistence.Query;
 @Component
 public class RwtResultsChangeRequestReportDAO extends BaseDAOImpl {
 
-    public void insert(RwtResultsChangeRequestReport crReport) {
+    public void insert(RwtResultsChangeRequestSummary crReport) {
         RwtResultsChangeRequestReportEntity entity = RwtResultsChangeRequestReportEntity.builder()
                 .approvedCount(crReport.getApprovedCount())
                 .reportDate(crReport.getReportDate())
+                .reportingWindowStart(crReport.getRwtResultsReportingWindowStart())
+                .reportingWindowEnd(crReport.getRwtResultsReportingWindowEnd())
                 .certificationBody(crReport.getCertificationBody().getId() == 0L ? null : CertificationBodyEntity.builder()
                         .id(crReport.getCertificationBody().getId())
                         .build())
@@ -27,16 +29,35 @@ public class RwtResultsChangeRequestReportDAO extends BaseDAOImpl {
         create(entity);
     }
 
-    public List<RwtResultsChangeRequestReport> getRwtResultsChangeRequestReportByDate(LocalDate date) {
+    public List<RwtResultsChangeRequestSummary> getReportByDate(LocalDate date) {
         return getEntitiesByDate(date).stream()
                 .map(entity -> entity.toDomain())
                 .toList();
     }
 
-    public void deleteRwtResultsChangeRequestReportByDate(LocalDate date) {
+    public void deleteByReportDate(LocalDate date) {
         getEntitiesByDate(date).forEach(entity -> {
             entity.setDeleted(true);
             update(entity);
+        });
+    }
+
+    public void save(List<RwtResultsChangeRequestSummary> crReports) {
+        crReports.forEach(crReport -> {
+            RwtResultsChangeRequestReportEntity entity = RwtResultsChangeRequestReportEntity.builder()
+                    .approvedCount(crReport.getApprovedCount())
+                    .reportDate(crReport.getReportDate())
+                    .reportingWindowStart(crReport.getRwtResultsReportingWindowStart())
+                    .reportingWindowEnd(crReport.getRwtResultsReportingWindowEnd())
+                    .certificationBody(crReport.getCertificationBody().getId() == 0L ? null : CertificationBodyEntity.builder()
+                            .id(crReport.getCertificationBody().getId())
+                            .build())
+                    .applicableListingCount(crReport.getApplicableListingCount())
+                    .noSubmissionInWindowCount(crReport.getNoSubmissionInWindowCount())
+                    .pendingAcbActionCount(crReport.getPendingAcbActionCount())
+                    .pendingDeveloperActionCount(crReport.getPendingDeveloperActionCount())
+                    .build();
+            create(entity);
         });
     }
 

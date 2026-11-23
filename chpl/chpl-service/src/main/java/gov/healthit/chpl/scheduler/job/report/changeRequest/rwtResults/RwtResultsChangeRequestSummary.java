@@ -21,7 +21,7 @@ import tools.jackson.databind.annotation.JsonSerialize;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class RwtResultsChangeRequestReport {
+public class RwtResultsChangeRequestSummary {
     private Long id;
 
     @JsonDeserialize(using = LocalDateDeserializer.class)

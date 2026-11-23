@@ -14,6 +14,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class RealWorldTestingReport {
     private String acbName;
+    private Long listingId;
     private String chplProductNumber;
     private String currentStatus;
     private LocalDate certificationDate;

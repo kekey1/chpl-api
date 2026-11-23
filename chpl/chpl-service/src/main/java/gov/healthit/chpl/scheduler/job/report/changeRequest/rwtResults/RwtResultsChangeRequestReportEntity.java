@@ -40,6 +40,12 @@ public class RwtResultsChangeRequestReportEntity extends EntityAudit {
     @Column(name = "report_date")
     private LocalDate reportDate;
 
+    @Column(name = "reporting_window_start")
+    private LocalDate reportingWindowStart;
+
+    @Column(name = "reporting_window_end")
+    private LocalDate reportingWindowEnd;
+
     @OneToOne(optional = true, fetch = FetchType.LAZY)
     @JoinColumn(name = "certification_body_id")
     private CertificationBodyEntity certificationBody;
@@ -59,8 +65,8 @@ public class RwtResultsChangeRequestReportEntity extends EntityAudit {
     @Column(name = "no_submission_in_window_count")
     private Long noSubmissionInWindowCount;
 
-    public RwtResultsChangeRequestReport toDomain() {
-        return RwtResultsChangeRequestReport.builder()
+    public RwtResultsChangeRequestSummary toDomain() {
+        return RwtResultsChangeRequestSummary.builder()
                 .id(id)
                 .reportDate(reportDate)
                 .certificationBody(certificationBody != null

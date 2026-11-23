@@ -131,6 +131,7 @@ public class RealWorldTestingReportService {
 
         RealWorldTestingReport report = RealWorldTestingReport.builder()
                 .acbName(listing.getCertificationBodyName())
+                .listingId(listing.getId())
                 .chplProductNumber(listing.getChplProductNumber())
                 .currentStatus(currentStatus != null ? currentStatus.getStatus().getName() : "")
                 .certificationDate(DateUtil.toLocalDate(listing.getCertificationDate().getTime()))

@@ -12,6 +12,7 @@ import java.util.stream.Collectors;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Component;
@@ -76,6 +77,29 @@ public class ChangeRequestSearchService {
                 .pageSize(searchRequest.getPageSize())
                 .recordCount(matchedChangeRequests.size())
                 .build();
+    }
+
+    @Transactional(readOnly = true)
+    @PreAuthorize("@permissions.hasAccess(T(gov.healthit.chpl.permissions.Permissions).CHANGE_REQUEST, "
+            + "T(gov.healthit.chpl.permissions.domains.ChangeRequestDomainPermissions).SEARCH)")
+    public List<ChangeRequestSearchResult> getAllPagesOfSearchResults(ChangeRequestSearchRequest searchRequest, Logger logger) {
+        List<ChangeRequestSearchResult> searchResults = new ArrayList<ChangeRequestSearchResult>();
+        try {
+            logger.debug(searchRequest.toString());
+            ChangeRequestSearchResponse searchResponse = searchChangeRequests(searchRequest);
+            searchResults.addAll(searchResponse.getResults());
+            while (searchResponse.getRecordCount() > searchResults.size()) {
+                searchRequest.setPageSize(searchResponse.getPageSize());
+                searchRequest.setPageNumber(searchResponse.getPageNumber() + 1);
+                logger.debug(searchRequest.toString());
+                searchResponse = searchChangeRequests(searchRequest);
+                searchResults.addAll(searchResponse.getResults());
+            }
+            logger.debug("Found {} total change requests for search request {}.", searchResults.size(), searchRequest);
+        } catch (ValidationException ex) {
+            logger.error("Could not retrieve change requests from search request.", ex);
+        }
+        return searchResults;
     }
 
     private List<ChangeRequestSearchResult> filterResults(List<ChangeRequestSearchResult> allChangeRequests,

@@ -1,5 +1,6 @@
 package gov.healthit.chpl.changerequest.dao;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,6 +30,31 @@ public class ChangeRequestListingUrlDAO extends BaseDAOImpl {
 
     public ChangeRequestListingUrl getByChangeRequestId(Long changeRequestId) throws EntityRetrievalException {
         return changeRequestConverter.convert(getEntityByChangeRequestId(changeRequestId));
+    }
+
+    public Long getCountOfListingsWithNoChangeRequestsBetweenDates(List<Long> listingIds, LocalDateTime start, LocalDateTime end) {
+        String hql = "SELECT COUNT(listing.id) "
+                + "FROM CertifiedProductEntity listing "
+                + "WHERE listing.id IN (:listingIds) "
+                + "AND NOT EXISTS ("
+                + "    SELECT 1 "
+                + "    FROM ChangeRequestListingUrlEntity crListingUrl "
+                + "    JOIN crListingUrl.changeRequest cr "
+                + "    WHERE crListingUrl.listingId = listing.id "
+                + "    AND crListingUrl.deleted = false "
+                + "    AND cr.deleted = false "
+                + "    AND cr.creationDate >= :start "
+                + "    AND cr.creationDate < :end"
+                + ")";
+
+        Long result = entityManager
+                .createQuery(hql, Long.class)
+                .setParameter("listingIds", listingIds)
+                .setParameter("start", start)
+                .setParameter("end", end)
+                .getSingleResult();
+
+        return result;
     }
 
     public void update(ChangeRequestListingUrl crListingUpdate) throws EntityRetrievalException {
