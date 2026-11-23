@@ -25,7 +25,7 @@ import gov.healthit.chpl.realworldtesting.manager.RealWorldTestingReportService;
 import lombok.extern.log4j.Log4j2;
 
 @Component
-@Log4j2
+@Log4j2(topic = "rwtResultsChangeRequestReportCreatorJobLogger")
 public class RwtResultsChangeRequestReportSummaryDataCollector {
     private ChangeRequestSearchService changeRequestSearchService;
     private ChangeRequestListingUrlDAO changeRequestListingUrlDAO;
@@ -49,7 +49,7 @@ public class RwtResultsChangeRequestReportSummaryDataCollector {
         LocalDateTime rwtResultsReportingPeriodStart = rwtReportService.getResultsStartDate(currentRwtEligibilityYear).atStartOfDay();
         LocalDateTime rwtResultsReportingPeriodEnd = rwtReportService.getResultsDataGatheringStopDate(currentRwtEligibilityYear).plusDays(1).atStartOfDay();
         List<RealWorldTestingReport> rwtReportsForListingEligibleThisYearOrEarlier = rwtReportService.getRealWorldTestingReports(acbIds, LOGGER).stream()
-                .filter(rwtReport -> rwtReport.getRwtEligibilityYear() <= currentRwtEligibilityYear)
+                .filter(rwtReport -> rwtReport.getRwtEligibilityYear() != null && rwtReport.getRwtEligibilityYear() <= currentRwtEligibilityYear)
                 .collect(Collectors.toList());
 
         List<ChangeRequestSearchResult> rwtResultsChangeRequestsDuringPeriod = changeRequestSearchService.getAllPagesOfSearchResults(ChangeRequestSearchRequest.builder()
