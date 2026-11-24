@@ -130,6 +130,7 @@ public class RwtResultsChangeRequestReportSummaryDataCollector {
             .filter(rwtReport -> rwtReport.getAcbName().equals(acb.getName()))
             .map(rwtReport -> rwtReport.getListingId())
             .collect(Collectors.toList());
-        return changeRequestListingUrlDAO.getCountOfListingsWithNoChangeRequestsBetweenDates(eligibleListingIdsForAcb, reportingPeriodStart, reportingPeriodEnd);
+        return changeRequestListingUrlDAO.getCountOfListingsWithNoChangeRequestsBetweenDates(eligibleListingIdsForAcb,
+                ChangeRequestType.RWT_RESULTS_TYPE, reportingPeriodStart, reportingPeriodEnd);
     }
 }

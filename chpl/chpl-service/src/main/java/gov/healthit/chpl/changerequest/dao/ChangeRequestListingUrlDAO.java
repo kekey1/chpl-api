@@ -32,7 +32,8 @@ public class ChangeRequestListingUrlDAO extends BaseDAOImpl {
         return changeRequestConverter.convert(getEntityByChangeRequestId(changeRequestId));
     }
 
-    public Long getCountOfListingsWithNoChangeRequestsBetweenDates(List<Long> listingIds, LocalDateTime start, LocalDateTime end) {
+    public Long getCountOfListingsWithNoChangeRequestsBetweenDates(List<Long> listingIds, String changeRequestTypeName,
+            LocalDateTime start, LocalDateTime end) {
         String hql = "SELECT COUNT(listing.id) "
                 + "FROM CertifiedProductEntity listing "
                 + "WHERE listing.id IN (:listingIds) "
@@ -40,7 +41,9 @@ public class ChangeRequestListingUrlDAO extends BaseDAOImpl {
                 + "    SELECT 1 "
                 + "    FROM ChangeRequestListingUrlEntity crListingUrl "
                 + "    JOIN crListingUrl.changeRequest cr "
+                + "    JOIN cr.changeRequestType crType "
                 + "    WHERE crListingUrl.listingId = listing.id "
+                + "    AND crType.name = :changeRequestTypeName "
                 + "    AND crListingUrl.deleted = false "
                 + "    AND cr.deleted = false "
                 + "    AND cr.creationDate >= :start "
@@ -50,6 +53,7 @@ public class ChangeRequestListingUrlDAO extends BaseDAOImpl {
         Long result = entityManager
                 .createQuery(hql, Long.class)
                 .setParameter("listingIds", listingIds)
+                .setParameter("changeRequestTypeName", changeRequestTypeName)
                 .setParameter("start", start)
                 .setParameter("end", end)
                 .getSingleResult();

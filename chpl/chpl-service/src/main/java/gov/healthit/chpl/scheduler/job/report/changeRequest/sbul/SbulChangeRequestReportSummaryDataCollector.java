@@ -154,6 +154,7 @@ public class SbulChangeRequestReportSummaryDataCollector {
             .filter(listing -> listing.getCertificationBody().getName().equals(acb.getName()))
             .map(listing -> listing.getId())
             .collect(Collectors.toList());
-        return changeRequestListingUrlDAO.getCountOfListingsWithNoChangeRequestsBetweenDates(eligibleListingIdsForAcb, reportingPeriodStart, reportingPeriodEnd);
+        return changeRequestListingUrlDAO.getCountOfListingsWithNoChangeRequestsBetweenDates(eligibleListingIdsForAcb,
+                ChangeRequestType.SBUL_TYPE, reportingPeriodStart, reportingPeriodEnd);
     }
 }
