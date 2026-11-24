@@ -44,6 +44,7 @@ public class RwtResultsChangeRequestReportSummaryDataCollector {
     }
 
     public List<RwtResultsChangeRequestSummary> collect(List<Long> acbIds) {
+        LocalDate today = LocalDate.now();
         List<CertificationBody> acbs = getAcbs(acbIds);
         Integer currentRwtEligibilityYear = LocalDate.now().getYear() - 1;
         LocalDateTime rwtResultsReportingPeriodStart = rwtReportService.getResultsStartDate(currentRwtEligibilityYear).atStartOfDay();
@@ -55,12 +56,13 @@ public class RwtResultsChangeRequestReportSummaryDataCollector {
         List<ChangeRequestSearchResult> rwtResultsChangeRequestsDuringPeriod = changeRequestSearchService.getAllPagesOfSearchResults(ChangeRequestSearchRequest.builder()
                 .acbIds(acbIds.stream().collect(Collectors.toSet()))
                 .changeRequestTypeNames(Stream.of(ChangeRequestType.RWT_RESULTS_TYPE).collect(Collectors.toSet()))
-                .submittedDateTimeStart(DateTimeFormatter.ofPattern(ChangeRequestSearchRequest.TIMESTAMP_SEARCH_FORMAT).format(rwtResultsReportingPeriodStart))
-                .submittedDateTimeEnd(DateTimeFormatter.ofPattern(ChangeRequestSearchRequest.TIMESTAMP_SEARCH_FORMAT).format(rwtResultsReportingPeriodEnd))
+                .submittedDateTimeStart(DateTimeFormatter.ofPattern(ChangeRequestSearchRequest.TIMESTAMP_SEARCH_FORMAT_PATTERN).format(rwtResultsReportingPeriodStart))
+                .submittedDateTimeEnd(DateTimeFormatter.ofPattern(ChangeRequestSearchRequest.TIMESTAMP_SEARCH_FORMAT_PATTERN).format(rwtResultsReportingPeriodEnd))
                 .build(), LOGGER);
 
         return acbs.stream()
                 .map(acb -> RwtResultsChangeRequestSummary.builder()
+                    .reportDate(today)
                     .rwtResultsReportingWindowStart(rwtResultsReportingPeriodStart.toLocalDate())
                     .rwtResultsReportingWindowEnd(rwtResultsReportingPeriodEnd.toLocalDate())
                     .certificationBody(acb)

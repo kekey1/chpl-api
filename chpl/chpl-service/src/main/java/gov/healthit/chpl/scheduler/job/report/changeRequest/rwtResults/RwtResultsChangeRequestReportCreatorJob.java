@@ -56,7 +56,7 @@ public class RwtResultsChangeRequestReportCreatorJob extends QuartzJob {
         transactionOperations.executeWithoutResult(status -> {
                 try {
                     LOGGER.info("Collecting report data");
-                    List<Long> acbIds = certificationBodyManager.getAll().stream()
+                    List<Long> acbIds = certificationBodyManager.getAllActive().stream()
                             .map(CertificationBody::getId)
                             .toList();
                     List<RwtResultsChangeRequestSummary> reportRows = dataCollector.collect(acbIds);

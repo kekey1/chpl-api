@@ -14,23 +14,6 @@ import lombok.extern.log4j.Log4j2;
 @Component
 public class RwtResultsChangeRequestReportDAO extends BaseDAOImpl {
 
-    public void insert(RwtResultsChangeRequestSummary crReport) {
-        RwtResultsChangeRequestReportEntity entity = RwtResultsChangeRequestReportEntity.builder()
-                .approvedCount(crReport.getApprovedCount())
-                .reportDate(crReport.getReportDate())
-                .reportingWindowStart(crReport.getRwtResultsReportingWindowStart())
-                .reportingWindowEnd(crReport.getRwtResultsReportingWindowEnd())
-                .certificationBody(crReport.getCertificationBody().getId() == 0L ? null : CertificationBodyEntity.builder()
-                        .id(crReport.getCertificationBody().getId())
-                        .build())
-                .applicableListingCount(crReport.getApplicableListingCount())
-                .noSubmissionInWindowCount(crReport.getNoSubmissionInWindowCount())
-                .pendingAcbActionCount(crReport.getPendingAcbActionCount())
-                .pendingDeveloperActionCount(crReport.getPendingDeveloperActionCount())
-                .build();
-        create(entity);
-    }
-
     public List<RwtResultsChangeRequestSummary> getReportByDate(LocalDate date) {
         return getEntitiesByDate(date).stream()
                 .map(entity -> entity.toDomain())
