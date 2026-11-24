@@ -30,7 +30,7 @@ import lombok.experimental.SuperBuilder;
 @Entity
 @Table(name = "sbul_change_request_report")
 public class SbulChangeRequestReportEntity extends EntityAudit {
-    private static final long serialVersionUID = -213628530211021705L;
+    private static final long serialVersionUID = -212328530211021705L;
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

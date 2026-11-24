@@ -28,6 +28,7 @@ import gov.healthit.chpl.exception.ValidationException;
 import gov.healthit.chpl.search.ListingSearchService;
 import gov.healthit.chpl.search.domain.ListingSearchResult;
 import gov.healthit.chpl.search.domain.SearchRequest;
+import gov.healthit.chpl.search.domain.SearchSetOperator;
 import gov.healthit.chpl.service.CertificationCriterionService;
 import gov.healthit.chpl.service.CertificationCriterionService.Criteria2015;
 import gov.healthit.chpl.util.CertificationStatusUtil;
@@ -89,6 +90,7 @@ public class SbulChangeRequestReportSummaryDataCollector {
         try {
             sbulEligibleListings = listingSearchService.getAllPagesOfSearchResults(SearchRequest.builder()
                 .certificationBodies(acbs.stream().map(acb -> acb.getName()).collect(Collectors.toSet()))
+                .certificationCriteriaOperator(SearchSetOperator.AND)
                 .certificationCriteriaIds(Stream.of(g10.getId()).collect(Collectors.toSet()))
                 .certificationStatuses(CertificationStatusUtil.getActiveStatusNames().stream().collect(Collectors.toSet()))
                 .build());
