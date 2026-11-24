@@ -210,6 +210,10 @@
         <AppenderRef ref="rwtResultsChangeRequestReportCreatorJob" />
         <AppenderRef ref="rwtResultsChangeRequestReportCreatorJobJson" />
     </Logger>
+    <Logger name="sbulChangeRequestReportCreatorJobLogger" level="INFO" additivity="false">
+        <AppenderRef ref="sbulChangeRequestReportCreatorJob" />
+        <AppenderRef ref="sbulChangeRequestReportCreatorJobJson" />
+    </Logger>
     <Logger name="messageDevelopersJobLogger" level="INFO" additivity="false">
         <AppenderRef ref="messageDevelopersJob" />
         <AppenderRef ref="messageDevelopersJobJson" />

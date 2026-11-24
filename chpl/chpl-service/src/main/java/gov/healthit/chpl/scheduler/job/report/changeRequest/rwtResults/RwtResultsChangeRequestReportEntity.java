@@ -77,6 +77,8 @@ public class RwtResultsChangeRequestReportEntity extends EntityAudit {
                 .pendingAcbActionCount(pendingAcbActionCount)
                 .pendingDeveloperActionCount(pendingDeveloperActionCount)
                 .noSubmissionInWindowCount(noSubmissionInWindowCount)
+                .reportingWindowStart(reportingWindowStart)
+                .reportingWindowEnd(reportingWindowEnd)
                 .build();
     }
 

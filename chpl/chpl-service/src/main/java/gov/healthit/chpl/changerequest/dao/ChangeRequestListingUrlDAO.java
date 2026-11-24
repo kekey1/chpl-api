@@ -44,7 +44,7 @@ public class ChangeRequestListingUrlDAO extends BaseDAOImpl {
                 + "    AND crListingUrl.deleted = false "
                 + "    AND cr.deleted = false "
                 + "    AND cr.creationDate >= :start "
-                + "    AND cr.creationDate < :end"
+                + "    AND cr.creationDate <= :end"
                 + ")";
 
         Long result = entityManager

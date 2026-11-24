@@ -2,6 +2,7 @@ package gov.healthit.chpl.scheduler.job.report.changeRequest.rwtResults;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -48,7 +49,7 @@ public class RwtResultsChangeRequestReportSummaryDataCollector {
         List<CertificationBody> acbs = getAcbs(acbIds);
         Integer currentRwtEligibilityYear = LocalDate.now().getYear() - 1;
         LocalDateTime rwtResultsReportingPeriodStart = rwtReportService.getResultsStartDate(currentRwtEligibilityYear).atStartOfDay();
-        LocalDateTime rwtResultsReportingPeriodEnd = rwtReportService.getResultsDataGatheringStopDate(currentRwtEligibilityYear).plusDays(1).atStartOfDay();
+        LocalDateTime rwtResultsReportingPeriodEnd = rwtReportService.getResultsDataGatheringStopDate(currentRwtEligibilityYear).atTime(LocalTime.MAX);
         List<RealWorldTestingReport> rwtReportsForListingEligibleThisYearOrEarlier = rwtReportService.getRealWorldTestingReports(acbIds, LOGGER).stream()
                 .filter(rwtReport -> rwtReport.getRwtEligibilityYear() != null && rwtReport.getRwtEligibilityYear() <= currentRwtEligibilityYear)
                 .collect(Collectors.toList());
@@ -63,8 +64,8 @@ public class RwtResultsChangeRequestReportSummaryDataCollector {
         return acbs.stream()
                 .map(acb -> RwtResultsChangeRequestSummary.builder()
                     .reportDate(today)
-                    .rwtResultsReportingWindowStart(rwtResultsReportingPeriodStart.toLocalDate())
-                    .rwtResultsReportingWindowEnd(rwtResultsReportingPeriodEnd.toLocalDate())
+                    .reportingWindowStart(rwtResultsReportingPeriodStart.toLocalDate())
+                    .reportingWindowEnd(rwtResultsReportingPeriodEnd.toLocalDate())
                     .certificationBody(acb)
                     .applicableListingCount(calculateApplicableListingCount(acb, rwtReportsForListingEligibleThisYearOrEarlier))
                     .approvedCount(calculateApprovedCount(acb, rwtResultsChangeRequestsDuringPeriod))

@@ -869,6 +869,15 @@
         </job>
 
         <job>
+            <name>sbulChangeRequestReportCreatorJob</name>
+            <group>systemJobs</group>
+            <description>Populate SBUL Change Request reporting tables</description>
+            <job-class>gov.healthit.chpl.scheduler.job.report.changeRequest.sbul.SbulChangeRequestReportCreatorJob</job-class>
+            <durability>true</durability>
+            <recover>false</recover>
+        </job>
+
+        <job>
             <name>attestationReportCreatorJob</name>
             <group>systemJobs</group>
             <description>Generate data for the Attestation Report (Power BI)</description>

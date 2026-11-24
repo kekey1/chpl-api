@@ -1,13 +1,8 @@
 package gov.healthit.chpl.scheduler.job.report.changeRequest.rwtResults;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
-
-import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import gov.healthit.chpl.domain.CertificationBody;
-import gov.healthit.chpl.scheduler.job.report.changeRequest.ListingChangeRequestStatus;
 import gov.healthit.chpl.util.LocalDateDeserializer;
 import gov.healthit.chpl.util.LocalDateSerializer;
 import lombok.AllArgsConstructor;
@@ -32,11 +27,11 @@ public class RwtResultsChangeRequestSummary {
 
     @JsonDeserialize(using = LocalDateDeserializer.class)
     @JsonSerialize(using = LocalDateSerializer.class)
-    private LocalDate rwtResultsReportingWindowStart;
+    private LocalDate reportingWindowStart;
 
     @JsonDeserialize(using = LocalDateDeserializer.class)
     @JsonSerialize(using = LocalDateSerializer.class)
-    private LocalDate rwtResultsReportingWindowEnd;
+    private LocalDate reportingWindowEnd;
 
     @Builder.Default
     private Long applicableListingCount = 0L;
@@ -52,20 +47,4 @@ public class RwtResultsChangeRequestSummary {
 
     @Builder.Default
     private Long noSubmissionInWindowCount = 0L;
-
-    @JsonIgnore
-    @Builder.Default
-    private List<ListingChangeRequestStatus> listingsWithApprovedRwtResultsChangeRequests = new ArrayList<ListingChangeRequestStatus>();
-
-    @JsonIgnore
-    @Builder.Default
-    private List<ListingChangeRequestStatus> listingsWithPendingAcbActionRwtResultsChangeRequests = new ArrayList<ListingChangeRequestStatus>();
-
-    @JsonIgnore
-    @Builder.Default
-    private List<ListingChangeRequestStatus> listingsWithPendingDeveloperActionRwtResultsChangeRequests = new ArrayList<ListingChangeRequestStatus>();
-
-    @JsonIgnore
-    @Builder.Default
-    private List<ListingChangeRequestStatus> listingsWithNoRwtResultsChangeRequests = new ArrayList<ListingChangeRequestStatus>();
 }

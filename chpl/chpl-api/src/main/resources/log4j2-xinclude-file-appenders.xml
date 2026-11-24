@@ -649,6 +649,19 @@
         </Policies>
     </RollingFile>
 
+    <RollingFile name="sbulChangeRequestReportCreatorJob"
+        fileName="${logDir}/scheduler/sbulChangeRequestReportCreatorJob.log"
+        filePattern="${logDir}/scheduler/history/sbulChangeRequestReportCreatorJob-%d{yyyy-MM-dd}.log"
+        filePermissions="rw-rw-r--">
+        <PatternLayout>
+            <Pattern>%d{ISO8601} %-5p (%t) [%C{1}(%M:%L)] %m%n</Pattern>
+        </PatternLayout>
+        <Policies>
+            <TimeBasedTriggeringPolicy
+                interval="1" modulate="true" />
+        </Policies>
+    </RollingFile>
+
     <RollingFile name="messageDevelopersJob"
         fileName="${logDir}/scheduler/messageDevelopersJob.log"
         filePattern="${logDir}/scheduler/history/messageDevelopersJob-%d{yyyy-MM-dd}.log"
@@ -1198,6 +1211,14 @@
     <Console name="rwtResultsChangeRequestReportCreatorJobJson" target="SYSTEM_OUT">
         <JsonLayout compact="true" eventEol="true" properties="true" stacktraceAsString="true">
             <KeyValuePair key="service" value="rwtResultsChangeRequestReportCreatorJob" />
+            <KeyValuePair key="dd.trace_id" value="%X{dd.trace_id}" />
+            <KeyValuePair key="dd.span_id" value="%X{dd.span_id}" />
+        </JsonLayout>
+    </Console>
+
+    <Console name="sbulChangeRequestReportCreatorJobJson" target="SYSTEM_OUT">
+        <JsonLayout compact="true" eventEol="true" properties="true" stacktraceAsString="true">
+            <KeyValuePair key="service" value="sbulChangeRequestReportCreatorJob" />
             <KeyValuePair key="dd.trace_id" value="%X{dd.trace_id}" />
             <KeyValuePair key="dd.span_id" value="%X{dd.span_id}" />
         </JsonLayout>

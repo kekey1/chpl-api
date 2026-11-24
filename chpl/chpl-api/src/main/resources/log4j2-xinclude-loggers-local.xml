@@ -200,6 +200,9 @@
     <Logger name="rwtResultsChangeRequestReportCreatorJobLogger" level="INFO" additivity="false">
         <AppenderRef ref="rwtResultsChangeRequestReportCreatorJob" />
     </Logger>
+    <Logger name="sbulChangeRequestReportCreatorJobLogger" level="INFO" additivity="false">
+        <AppenderRef ref="sbulChangeRequestReportCreatorJob" />
+    </Logger>
     <Logger name="messageDevelopersJobLogger" level="INFO" additivity="false">
         <AppenderRef ref="messageDevelopersJob" />
     </Logger>
